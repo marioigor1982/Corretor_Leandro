@@ -382,13 +382,13 @@ const AdminLogin: React.FC<{ onLoginSuccess: (user: any) => void }> = ({ onLogin
     return (
         <div className="h-screen w-screen bg-cover bg-center flex items-center justify-center" style={{backgroundImage: "url('https://i.postimg.cc/pLzhXxt5/TELA-LOGIN-LEANDRO.png')"}}>
             <div className="absolute inset-0 bg-black/60"></div>
-            <div className="relative bg-white/90 backdrop-blur-sm p-8 md:p-12 rounded-2xl shadow-2xl text-center max-w-md w-full mx-4 animate-fade-in">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Área Restrita</h1>
-                <p className="text-gray-600 mb-6">Acesso exclusivo para corretores.</p>
+            <div className="relative bg-blue-950/50 backdrop-blur-sm p-8 md:p-12 rounded-2xl shadow-2xl text-center max-w-md w-full mx-4 animate-fade-in">
+                <h1 className="text-3xl font-bold text-white mb-2">Área Restrita</h1>
+                <p className="text-gray-300 mb-6">Acesso exclusivo para corretores.</p>
                 <div id="google-signin-button" className="flex justify-center mb-4"></div>
-                {authError && <p className="text-red-600 font-semibold mt-4">{authError}</p>}
+                {authError && <p className="text-red-400 font-semibold mt-4">{authError}</p>}
                 <div className="mt-8">
-                    <a href="/#" className="text-blue-600 hover:underline">
+                    <a href="/#" className="text-gray-200 hover:underline">
                         <i className="fa-solid fa-arrow-left mr-2"></i>Voltar ao site
                     </a>
                 </div>
