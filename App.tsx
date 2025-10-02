@@ -51,7 +51,6 @@ const backgroundImages = [
   'https://i.postimg.cc/66CFj4V2/f16ad66f-5aa9-4348-b63f-6a9127bee08d.jpg'
 ];
 
-// NOTE: Translations moved inside PublicSite to keep this file organized
 const PropertyCard: React.FC<{ property: Property }> = ({ property }) => (
     <div className="flex-shrink-0 w-80 bg-white rounded-lg shadow-lg overflow-hidden snap-center transform transition-transform hover:scale-105">
         <img src={property.imageUrls[property.mainImageIndex] || 'https://picsum.photos/800/600'} alt={property.title} className="w-full h-48 object-cover" />
@@ -196,7 +195,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
               ))}
             </div>
             <div className="absolute inset-0 bg-black/60" aria-hidden="true"></div>
-            <div className="relative z-10 flex flex-col items-center max-w-5xl">
+            <div className="relative z-10 flex flex-col items-center max-w-5xl mt-16">
                 <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4" style={{textShadow: '2px 2px 6px rgba(0,0,0,0.8)'}}>
                     {t('heroTitle')}
                 </h1>
@@ -398,6 +397,373 @@ const AdminLogin: React.FC<{ onLoginSuccess: (user: any) => void }> = ({ onLogin
     );
 };
 
+const PropertyForm: React.FC<{
+  onSubmit: (property: Omit<Property, 'id'>) => void;
+  onCancel: () => void;
+  initialData?: Property | null;
+}> = ({ onSubmit, onCancel, initialData }) => {
+    const [formData, setFormData] = useState({
+        title: '', description: '', type: '', category: 'venda' as 'venda' | 'aluguel',
+        price: 0, location: '', bedrooms: 0, bathrooms: 0, area: 0
+    });
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [mainImageIndex, setMainImageIndex] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                title: initialData.title, description: initialData.description, type: initialData.type,
+                category: initialData.category, price: initialData.price, location: initialData.location,
+                bedrooms: initialData.bedrooms, bathrooms: initialData.bathrooms, area: initialData.area
+            });
+            setImageUrls(initialData.imageUrls);
+            setMainImageIndex(initialData.mainImageIndex);
+        }
+    }, [initialData]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: name === 'price' || name === 'bedrooms' || name === 'bathrooms' || name === 'area' ? parseFloat(value) : value }));
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length + imageUrls.length > 10) {
+            alert('Você pode enviar no máximo 10 fotos.');
+            return;
+        }
+        setIsUploading(true);
+        // Fix: Explicitly type `file` as `File` to resolve TypeScript inference issue.
+        const promises = files.map((file: File) => {
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        });
+        Promise.all(promises).then(base64Images => {
+            setImageUrls(prev => [...prev, ...base64Images]);
+            setIsUploading(false);
+        }).catch(error => {
+            console.error("Error reading files:", error);
+            setIsUploading(false);
+            alert("Erro ao carregar imagens.");
+        });
+    };
+    
+    const removeImage = (index: number) => {
+        setImageUrls(prev => prev.filter((_, i) => i !== index));
+        if (index === mainImageIndex) {
+            setMainImageIndex(0);
+        } else if (index < mainImageIndex) {
+            setMainImageIndex(prev => prev -1);
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (imageUrls.length === 0) {
+            alert('Por favor, envie pelo menos uma foto.');
+            return;
+        }
+        onSubmit({ ...formData, imageUrls, mainImageIndex });
+    };
+
+    return (
+        <div className="bg-gray-100 min-h-screen p-4 sm:p-6 md:p-8">
+            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">{initialData ? 'Editar Imóvel' : 'Cadastrar Novo Imóvel'}</h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label htmlFor="title" className="block text-sm font-medium text-gray-700">Título</label>
+                            <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                        <div>
+                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Localização</label>
+                            <input type="text" name="location" id="location" value={formData.location} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descrição</label>
+                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                    </div>
+
+                    {/* Details */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div>
+                            <label htmlFor="price" className="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                        <div>
+                            <label htmlFor="type" className="block text-sm font-medium text-gray-700">Tipo (Ex: Casa)</label>
+                            <input type="text" name="type" id="type" value={formData.type} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Casa, Apartamento..."/>
+                        </div>
+                        <div>
+                            <label htmlFor="category" className="block text-sm font-medium text-gray-700">Categoria</label>
+                            <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="venda">Venda</option>
+                                <option value="aluguel">Aluguel</option>
+                            </select>
+                        </div>
+                        <div>
+                             <label htmlFor="area" className="block text-sm font-medium text-gray-700">Área (m²)</label>
+                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                         <div>
+                            <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700">Quartos</label>
+                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                        <div>
+                            <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700">Banheiros</label>
+                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                    </div>
+                    
+                    {/* Image Upload */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Fotos (até 10)</label>
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div className="space-y-1 text-center">
+                                <i className="fa-solid fa-image text-4xl text-gray-400 mx-auto"></i>
+                                <div className="flex text-sm text-gray-600">
+                                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                        <span>Carregar arquivos</span>
+                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple accept="image/*" onChange={handleImageUpload} disabled={imageUrls.length >= 10}/>
+                                    </label>
+                                    <p className="pl-1">ou arraste e solte</p>
+                                </div>
+                                <p className="text-xs text-gray-500">{10 - imageUrls.length} restantes</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {isUploading && <LoadingSpinner />}
+                    {imageUrls.length > 0 && (
+                        <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Imagens Carregadas:</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                                {imageUrls.map((url, index) => (
+                                    <div key={index} className={`relative group rounded-lg overflow-hidden border-2 ${index === mainImageIndex ? 'border-indigo-500' : 'border-transparent'}`}>
+                                        <img src={url} alt={`Preview ${index}`} className="h-32 w-full object-cover"/>
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 space-y-2">
+                                            <button type="button" onClick={() => setMainImageIndex(index)} title="Marcar como principal" className="text-white text-xs bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded w-full text-center">
+                                                <i className="fa-solid fa-star mr-1"></i> Principal
+                                            </button>
+                                            <button type="button" onClick={() => removeImage(index)} title="Remover imagem" className="text-white text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded w-full text-center">
+                                                <i className="fa-solid fa-trash mr-1"></i> Remover
+                                            </button>
+                                        </div>
+                                         {index === mainImageIndex && <div className="absolute top-1 right-1 bg-indigo-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs"><i className="fa-solid fa-star"></i></div>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+
+                    {/* Actions */}
+                    <div className="pt-5 flex justify-end space-x-3">
+                        <button type="button" onClick={onCancel} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Cancelar
+                        </button>
+                        <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Salvar Imóvel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+
+const AdminDashboard: React.FC<{
+    user: any;
+    onLogout: () => void;
+    properties: Property[];
+    onPropertiesUpdate: (properties: Property[]) => void;
+}> = ({ user, onLogout, properties, onPropertiesUpdate }) => {
+    const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
+    const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+    const [filterCategory, setFilterCategory] = useState<'all' | 'venda' | 'aluguel'>('all');
+    const [filterType, setFilterType] = useState<string>('');
+    const [searchTerm, setSearchTerm] = useState<string>('');
+
+    const handleAddClick = () => {
+        if (properties.length >= 100) {
+            alert("Limite de 100 imóveis atingido. Exclua um imóvel para adicionar outro.");
+            return;
+        }
+        setEditingProperty(null);
+        setView('add');
+    };
+
+    const handleEditClick = (property: Property) => {
+        setEditingProperty(property);
+        setView('edit');
+    };
+
+    const handleDeleteClick = (propertyId: number) => {
+        if (window.confirm("Tem certeza que deseja excluir este imóvel? A ação não pode ser desfeita.")) {
+            const updatedProperties = properties.filter(p => p.id !== propertyId);
+            onPropertiesUpdate(updatedProperties);
+        }
+    };
+
+    const handleFormSubmit = (formData: Omit<Property, 'id'>) => {
+        if (view === 'add') {
+            const newProperty: Property = { ...formData, id: Date.now() };
+            onPropertiesUpdate([newProperty, ...properties]);
+        } else if (view === 'edit' && editingProperty) {
+            const updatedProperties = properties.map(p =>
+                p.id === editingProperty.id ? { ...formData, id: p.id } : p
+            );
+            onPropertiesUpdate(updatedProperties);
+        }
+        setView('list');
+        setEditingProperty(null);
+    };
+
+    const propertyTypes = [...new Set(properties.map(p => p.type))];
+    const filteredProperties = properties.filter(p => {
+        const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
+        const matchesType = filterType === '' || p.type === filterType;
+        const matchesSearch = searchTerm === '' || 
+            p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.location.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCategory && matchesType && matchesSearch;
+    });
+    
+    const stats = {
+        total: properties.length,
+        venda: properties.filter(p => p.category === 'venda').length,
+        aluguel: properties.filter(p => p.category === 'aluguel').length
+    };
+
+    if (view === 'add' || view === 'edit') {
+        return (
+            <PropertyForm
+                onSubmit={handleFormSubmit}
+                onCancel={() => { setView('list'); setEditingProperty(null); }}
+                initialData={editingProperty}
+            />
+        );
+    }
+
+    return (
+        <div className="bg-gray-100 min-h-screen">
+            <header className="bg-white shadow-sm sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+                     <div className="flex items-center space-x-3">
+                        <img src="https://i.postimg.cc/fL7DVp0V/5cd14779-cfd8-48ef-b5b4-b710f606f6a9.jpg" alt="Logo" className="w-10 h-10 rounded-full"/>
+                        <h1 className="text-xl font-bold text-gray-800">Dashboard de Imóveis</h1>
+                     </div>
+                    <div className="flex items-center space-x-4">
+                        <span className="text-sm text-gray-600 hidden sm:block">Olá, {user.given_name || user.name}!</span>
+                        <img src={user.picture} alt="User" className="w-9 h-9 rounded-full" />
+                        <button onClick={onLogout} className="text-sm text-gray-600 hover:text-indigo-600" title="Sair">
+                            <i className="fa-solid fa-right-from-bracket text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Total de Imóveis</p>
+                            <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
+                        </div>
+                         <div className="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i className="fa-solid fa-building"></i>
+                        </div>
+                    </div>
+                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Imóveis à Venda</p>
+                            <p className="text-3xl font-bold text-gray-800">{stats.venda}</p>
+                        </div>
+                         <div className="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i className="fa-solid fa-tags"></i>
+                        </div>
+                    </div>
+                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Imóveis para Aluguel</p>
+                            <p className="text-3xl font-bold text-gray-800">{stats.aluguel}</p>
+                        </div>
+                         <div className="bg-orange-100 text-orange-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i className="fa-solid fa-key"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Filters and Actions */}
+                <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                        <div className="relative col-span-1 sm:col-span-2 md:col-span-1">
+                            <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" placeholder="Buscar por título, local..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        </div>
+                        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="all">Todas as Categorias</option>
+                            <option value="venda">Venda</option>
+                            <option value="aluguel">Aluguel</option>
+                        </select>
+                        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="">Todos os Tipos</option>
+                            {propertyTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                        </select>
+                        <button onClick={handleAddClick} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center space-x-2 transition-colors">
+                            <i className="fa-solid fa-plus"></i>
+                            <span>Cadastrar Imóvel</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Property List */}
+                {filteredProperties.length > 0 ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredProperties.map(prop => (
+                            <div key={prop.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col animate-fade-in">
+                                <img src={prop.imageUrls[prop.mainImageIndex] || ''} alt={prop.title} className="w-full h-48 object-cover"/>
+                                <div className="p-4 flex flex-col flex-grow">
+                                    <div className="flex justify-between items-start">
+                                      <h3 className="text-lg font-bold text-gray-800 truncate pr-2">{prop.title}</h3>
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mb-2">{prop.type} • {prop.location}</p>
+                                    <p className="text-gray-600 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
+                                    <p className="text-xl font-semibold text-gray-900 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
+                                </div>
+                                 <div className="border-t p-3 bg-gray-50 flex justify-end space-x-2">
+                                     <button onClick={() => handleEditClick(prop)} className="text-sm text-blue-600 hover:text-blue-800 font-medium py-1 px-3 rounded-md hover:bg-blue-50 transition-colors" title="Editar"><i className="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
+                                     <button onClick={() => handleDeleteClick(prop.id)} className="text-sm text-red-600 hover:text-red-800 font-medium py-1 px-3 rounded-md hover:bg-red-50 transition-colors" title="Excluir"><i className="fa-solid fa-trash-can mr-1"></i>Excluir</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 bg-white rounded-lg shadow-md">
+                        <i className="fa-solid fa-house-circle-xmark text-5xl text-gray-400 mb-4"></i>
+                        <h3 className="text-xl font-semibold text-gray-800">Nenhum imóvel encontrado</h3>
+                        <p className="text-gray-500 mt-2">Tente ajustar seus filtros ou cadastre um novo imóvel.</p>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+};
+
+
 // --- ROUTER & MAIN APP ---
 
 const App: React.FC = () => {
@@ -409,6 +775,11 @@ const App: React.FC = () => {
         setAllProperties(getProperties());
     }, []);
 
+    const handlePropertiesUpdate = (updatedProperties: Property[]) => {
+        setAllProperties(updatedProperties);
+        saveProperties(updatedProperties);
+    };
+
     useEffect(() => {
         const handleHashChange = () => setLocation(window.location.hash);
         window.addEventListener('hashchange', handleHashChange);
@@ -418,13 +789,16 @@ const App: React.FC = () => {
     const handleLoginSuccess = (loggedInUser: any) => {
         setUser(loggedInUser);
         sessionStorage.setItem('leandroCorretorUser', JSON.stringify(loggedInUser));
-        window.location.hash = '/dashboard';
+        window.location.hash = '#/dashboard';
     };
 
     const handleLogout = () => {
         setUser(null);
         sessionStorage.removeItem('leandroCorretorUser');
-        window.location.hash = '/admin';
+        if (window.google) {
+            window.google.accounts.id.disableAutoSelect();
+        }
+        window.location.hash = '#/admin';
     };
     
     useEffect(() => {
@@ -445,7 +819,7 @@ const App: React.FC = () => {
 
     if (location.startsWith('#/admin')) {
         if(user) {
-            window.location.hash = '/dashboard';
+            window.location.hash = '#/dashboard';
             return null;
         }
         return <AdminLogin onLoginSuccess={handleLoginSuccess} />;
@@ -453,12 +827,15 @@ const App: React.FC = () => {
 
     if (location.startsWith('#/dashboard')) {
         if (!user) {
-             window.location.hash = '/admin';
+             window.location.hash = '#/admin';
              return <LoadingSpinner />;
         }
-        // This is where the dashboard component would go.
-        // For simplicity in this single-file structure, we'll build it here.
-        return <div>Dashboard under construction. <button onClick={handleLogout}>Logout</button></div>;
+        return <AdminDashboard 
+            user={user} 
+            onLogout={handleLogout} 
+            properties={allProperties}
+            onPropertiesUpdate={handlePropertiesUpdate}
+        />;
     }
 
     return <PublicSite properties={allProperties} />;
