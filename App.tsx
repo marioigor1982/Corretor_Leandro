@@ -156,20 +156,19 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
               <img src="https://i.postimg.cc/fL7DVp0V/5cd14779-cfd8-48ef-b5b4-b710f606f6a9.jpg" alt="Logo Corretor Leandro" className="w-14 h-14 rounded-full border-2 border-gray-400 object-cover" />
             </div>
             <div className="flex items-center space-x-6 text-base text-white">
-              <div className="hidden md:flex items-center space-x-2">
-                <i className="fas fa-globe" aria-hidden="true"></i>
+              <div className="hidden md:flex items-center">
                 <select name="language" id="language" className="bg-transparent border border-gray-500 rounded px-2 py-1 focus:outline-none focus:border-white cursor-pointer" aria-label="Selecionar idioma" value={language} onChange={(e) => setLanguage(e.target.value as any)}>
-                  <option value="pt" className="bg-[#2C3E50]">{t('selectLanguage')}</option>
-                  <option value="pt" className="bg-[#2C3E50]">Português</option>
-                  <option value="en" className="bg-[#2C3E50]">English</option>
-                  <option value="es" className="bg-[#2C3E50]">Español</option>
-                  <option value="fr" className="bg-[#2C3E50]">Français</option>
-                  <option value="de" className="bg-[#2C3E50]">Deutsch</option>
-                  <option value="it" className="bg-[#2C3E50]">Italiano</option>
-                  <option value="ja" className="bg-[#2C3E50]">日本語</option>
-                  <option value="ko" className="bg-[#2C3E50]">한국어</option>
-                  <option value="zh" className="bg-[#2C3E50]">中文</option>
-                  <option value="ru" className="bg-[#2C3E50]">Русский</option>
+                  <option value="pt" className="bg-[#2C3E50]">🌐 {t('selectLanguage')}</option>
+                  <option value="pt" className="bg-[#2C3E50]">🇧🇷 Português</option>
+                  <option value="en" className="bg-[#2C3E50]">🇺🇸 English</option>
+                  <option value="es" className="bg-[#2C3E50]">🇪🇸 Español</option>
+                  <option value="fr" className="bg-[#2C3E50]">🇫🇷 Français</option>
+                  <option value="de" className="bg-[#2C3E50]">🇩🇪 Deutsch</option>
+                  <option value="it" className="bg-[#2C3E50]">🇮🇹 Italiano</option>
+                  <option value="ja" className="bg-[#2C3E50]">🇯🇵 日本語</option>
+                  <option value="ko" className="bg-[#2C3E50]">🇰🇷 한국어</option>
+                  <option value="zh" className="bg-[#2C3E50]">🇨🇳 中文</option>
+                  <option value="ru" className="bg-[#2C3E50]">🇷🇺 Русский</option>
                 </select>
               </div>
               <div className="hidden md:flex items-center space-x-8">
