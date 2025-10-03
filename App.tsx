@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Property } from './types';
 import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon } from './components/icons';
@@ -154,7 +155,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
         <header className="bg-[#2C3E50] fixed top-0 w-full z-50 shadow-md">
           <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
             <div className="flex items-center">
-              <img src="https://i.postimg.cc/fL7DVp0V/5cd14779-cfd8-48ef-b5b4-b710f606f6a9.jpg" alt="Logo Corretor Leandro" className="w-14 h-14 rounded-full border-2 border-gray-400 object-cover" />
+              <img src="https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg" alt="Logo Corretor Leandro" className="w-14 h-14 rounded-full border-2 border-gray-400 object-cover" />
             </div>
             <div className="flex items-center space-x-6 text-base text-white">
               <div className="hidden md:flex items-center">
@@ -254,7 +255,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
               <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">{t('about')}</h2>
               <div className="grid md:grid-cols-5 gap-12">
                 <div className="md:col-span-2">
-                  <img src="https://i.postimg.cc/fL7DVp0V/5cd14779-cfd8-48ef-b5b4-b710f606f6a9.jpg" alt="Foto de Leandro Buscarioli Colares" className="rounded-lg shadow-xl w-full h-full object-cover"/>
+                  <img src="https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg" alt="Foto de Leandro Buscarioli Colares" className="rounded-lg shadow-xl w-full h-full object-cover"/>
                 </div>
                 <div className="md:col-span-3">
                   <h3 className="text-3xl font-bold text-gray-800">{t('aboutName')}</h3>
@@ -669,7 +670,7 @@ const AdminDashboard: React.FC<{
             <header className="bg-white shadow-sm sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
                      <div className="flex items-center space-x-3">
-                        <img src="https://i.postimg.cc/fL7DVp0V/5cd14779-cfd8-48ef-b5b4-b710f606f6a9.jpg" alt="Logo" className="w-10 h-10 rounded-full"/>
+                        <img src="https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg" alt="Logo" className="w-10 h-10 rounded-full"/>
                         <h1 className="text-xl font-bold text-gray-800">Dashboard de Imóveis</h1>
                      </div>
                     <div className="flex items-center space-x-4">
