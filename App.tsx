@@ -351,6 +351,19 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
 
 const AdminLogin: React.FC<{ onLoginSuccess: (user: any) => void }> = ({ onLoginSuccess }) => {
     const [authError, setAuthError] = useState('');
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const desktopBg = "https://i.postimg.cc/pLzhXxt5/TELA-LOGIN-LEANDRO.png";
+    const mobileBg = "https://i.postimg.cc/gkXQgVp2/Foto-Leandro.jpg";
+    const bgImage = isMobile ? mobileBg : desktopBg;
 
     const handleCredentialResponse = useCallback((response: any) => {
         try {
@@ -389,7 +402,7 @@ const AdminLogin: React.FC<{ onLoginSuccess: (user: any) => void }> = ({ onLogin
     }, [handleCredentialResponse]);
 
     return (
-        <div className="h-screen w-screen bg-cover bg-center flex items-center justify-center" style={{backgroundImage: "url('https://i.postimg.cc/pLzhXxt5/TELA-LOGIN-LEANDRO.png')"}}>
+        <div className="h-screen w-screen bg-cover bg-center flex items-center justify-center" style={{backgroundImage: `url('${bgImage}')`}}>
             <div className="absolute inset-0 bg-black/60"></div>
             <div className="relative bg-blue-950/50 backdrop-blur-sm p-8 md:p-12 rounded-2xl shadow-2xl text-center max-w-md w-full mx-4 animate-fade-in">
                 <h1 className="text-3xl font-bold text-white mb-2">Área Restrita</h1>
