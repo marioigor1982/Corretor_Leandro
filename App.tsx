@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Property } from './types';
 import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon } from './components/icons';
@@ -578,6 +579,7 @@ const AdminDashboard: React.FC<{
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [filterCategory, setFilterCategory] = useState<'all' | 'venda' | 'aluguel'>('all');
     const [filterType, setFilterType] = useState<string>('');
+    const [filterCity, setFilterCity] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [priceRange, setPriceRange] = useState<string>('all');
     const [minBedrooms, setMinBedrooms] = useState<string>('');
@@ -626,9 +628,11 @@ const AdminDashboard: React.FC<{
     };
 
     const propertyTypes = [...new Set(properties.map(p => p.type))];
+    const propertyCities = [...new Set(properties.map(p => p.city))];
     const filteredProperties = properties.filter(p => {
         const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
         const matchesType = filterType === '' || p.type === filterType;
+        const matchesCity = filterCity === '' || p.city === filterCity;
         const matchesSearch = searchTerm === '' || 
             p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
             p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -647,13 +651,16 @@ const AdminDashboard: React.FC<{
         const maxBeds = maxBedrooms !== '' ? parseInt(maxBedrooms, 10) : Infinity;
         const matchesBedrooms = p.bedrooms >= minBeds && p.bedrooms <= maxBeds;
         
-        return matchesCategory && matchesType && matchesSearch && matchesPrice && matchesBedrooms;
+        return matchesCategory && matchesType && matchesCity && matchesSearch && matchesPrice && matchesBedrooms;
     });
     
     const stats = {
         total: properties.length,
         venda: properties.filter(p => p.category === 'venda').length,
-        aluguel: properties.filter(p => p.category === 'aluguel').length
+        aluguel: properties.filter(p => p.category === 'aluguel').length,
+        totalSalesValue: properties
+            .filter(p => p.category === 'venda')
+            .reduce((sum, property) => sum + property.price, 0)
     };
 
     if (view === 'add' || view === 'edit') {
@@ -685,7 +692,7 @@ const AdminDashboard: React.FC<{
             
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-500">Total de Imóveis</p>
@@ -713,6 +720,15 @@ const AdminDashboard: React.FC<{
                             <i className="fa-solid fa-key"></i>
                         </div>
                     </div>
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Valor Total em Vendas</p>
+                            <p className="text-2xl xl:text-3xl font-bold text-gray-800">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSalesValue)}</p>
+                        </div>
+                         <div className="bg-purple-100 text-purple-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i className="fa-solid fa-sack-dollar"></i>
+                        </div>
+                    </div>
                 </div>
                 
                 {/* Filters and Actions */}
@@ -736,7 +752,7 @@ const AdminDashboard: React.FC<{
                             <span>Cadastrar Imóvel</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end border-t border-gray-200 mt-4 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border-t border-gray-200 mt-4 pt-4">
                         <div>
                             <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700">Faixa de Preço</label>
                             <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -744,6 +760,13 @@ const AdminDashboard: React.FC<{
                                 <option value="0-100000">Até R$100.000</option>
                                 <option value="100001-300000">R$100.001 - R$300.000</option>
                                 <option value="300001-">Acima de R$300.000</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="cityFilter" className="block text-sm font-medium text-gray-700">Cidade</label>
+                            <select id="cityFilter" value={filterCity} onChange={e => setFilterCity(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="">Todas as Cidades</option>
+                                {propertyCities.map(city => <option key={city} value={city}>{city}</option>)}
                             </select>
                         </div>
                         <div>
