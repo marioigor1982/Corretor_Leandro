@@ -202,10 +202,10 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
                                   <PropertyCard key={property.id} property={property} />
                               ))}
                         </div>
-                        <button onClick={() => { handleCarouselScroll('left'); stopAutoScroll(); }} className="absolute top-1/2 left-0 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-10 transition" aria-label="Previous Property">
+                        <button onClick={() => { handleCarouselScroll('left'); stopAutoScroll(); }} className="absolute top-1/2 left-0 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 hidden sm:flex items-center justify-center shadow-md z-10 transition" aria-label="Previous Property">
                           <i className="fa-solid fa-chevron-left text-gray-700"></i>
                         </button>
-                         <button onClick={() => { handleCarouselScroll('right'); stopAutoScroll(); }} className="absolute top-1/2 right-0 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-md z-10 transition" aria-label="Next Property">
+                         <button onClick={() => { handleCarouselScroll('right'); stopAutoScroll(); }} className="absolute top-1/2 right-0 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 hidden sm:flex items-center justify-center shadow-md z-10 transition" aria-label="Next Property">
                           <i className="fa-solid fa-chevron-right text-gray-700"></i>
                         </button>
                       </>
@@ -736,7 +736,7 @@ const AdminDashboard: React.FC<{
                             <span>Cadastrar Imóvel</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2 items-end border-t border-gray-200 mt-4 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end border-t border-gray-200 mt-4 pt-4">
                         <div>
                             <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700">Faixa de Preço</label>
                             <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
