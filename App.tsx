@@ -1,24 +1,7 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Property } from './types';
 import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon } from './components/icons';
-
-// --- DATABASE HELPERS (localStorage simulation) ---
-const DB_PROPERTIES_KEY = 'leandroCorretorProperties';
-
-const getProperties = (): Property[] => {
-  try {
-    const data = localStorage.getItem(DB_PROPERTIES_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error("Failed to parse properties from localStorage", error);
-    return [];
-  }
-};
-
-const saveProperties = (properties: Property[]) => {
-  localStorage.setItem(DB_PROPERTIES_KEY, JSON.stringify(properties));
-};
+import { getProperties, addProperty, updateProperty, deleteProperty } from './services/propertyService';
 
 // --- PUBLIC SITE COMPONENTS ---
 
@@ -31,7 +14,7 @@ const backgroundImages = [
 ];
 
 const PropertyCard: React.FC<{ property: Property }> = ({ property }) => (
-    <div className="flex-shrink-0 w-80 bg-white rounded-lg shadow-lg overflow-hidden snap-center transform transition-transform hover:scale-105">
+    <div className="flex-shrink-0 w-[90vw] max-w-[20rem] sm:w-80 bg-white rounded-lg shadow-lg overflow-hidden snap-center transform transition-transform hover:scale-105">
         <img src={property.imageUrls[property.mainImageIndex] || 'https://picsum.photos/800/600'} alt={property.title} className="w-full h-48 object-cover" />
         <div className="p-4 text-gray-800">
             <h3 className="text-xl font-bold mb-2 truncate">{property.title}</h3>
@@ -542,7 +525,7 @@ const PropertyForm: React.FC<{
 
 
                     {/* Actions */}
-                    <div className="pt-5 flex justify-end space-x-3">
+                    <div className="pt-5 flex flex-col sm:flex-row sm:justify-end sm:space-x-3 gap-3 sm:gap-0">
                         <button type="button" onClick={onCancel} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
                         </button>
@@ -559,8 +542,8 @@ const PropertyForm: React.FC<{
 
 const AdminDashboard: React.FC<{
     properties: Property[];
-    onPropertiesUpdate: (properties: Property[]) => void;
-}> = ({ properties, onPropertiesUpdate }) => {
+    onDataChange: () => Promise<void>;
+}> = ({ properties, onDataChange }) => {
     const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [filterCategory, setFilterCategory] = useState<'all' | 'venda' | 'aluguel'>('all');
@@ -584,25 +567,32 @@ const AdminDashboard: React.FC<{
         setView('edit');
     };
 
-    const handleDeleteClick = (propertyId: number) => {
+    const handleDeleteClick = async (propertyId: number) => {
         if (window.confirm("Tem certeza que deseja excluir este imóvel? A ação não pode ser desfeita.")) {
-            const updatedProperties = properties.filter(p => p.id !== propertyId);
-            onPropertiesUpdate(updatedProperties);
+            try {
+                await deleteProperty(propertyId);
+                await onDataChange();
+            } catch (error) {
+                console.error("Failed to delete property:", error);
+                alert("Não foi possível excluir o imóvel.");
+            }
         }
     };
 
-    const handleFormSubmit = (formData: Omit<Property, 'id'>) => {
-        if (view === 'add') {
-            const newProperty: Property = { ...formData, id: Date.now() };
-            onPropertiesUpdate([newProperty, ...properties]);
-        } else if (view === 'edit' && editingProperty) {
-            const updatedProperties = properties.map(p =>
-                p.id === editingProperty.id ? { ...formData, id: p.id } : p
-            );
-            onPropertiesUpdate(updatedProperties);
+    const handleFormSubmit = async (formData: Omit<Property, 'id'>) => {
+        try {
+            if (view === 'add') {
+                await addProperty(formData);
+            } else if (view === 'edit' && editingProperty) {
+                await updateProperty(editingProperty.id, formData);
+            }
+            await onDataChange();
+            setView('list');
+            setEditingProperty(null);
+        } catch(error) {
+            console.error("Failed to save property:", error);
+            alert("Não foi possível salvar o imóvel.");
         }
-        setView('list');
-        setEditingProperty(null);
     };
 
     const propertyTypes = [...new Set(properties.map(p => p.type))];
@@ -716,7 +706,7 @@ const AdminDashboard: React.FC<{
                             <span>Cadastrar Imóvel</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end border-t border-gray-200 mt-4 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2 items-end border-t border-gray-200 mt-4 pt-4">
                         <div>
                             <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700">Faixa de Preço</label>
                             <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -777,15 +767,24 @@ const AdminDashboard: React.FC<{
 const App: React.FC = () => {
     const [location, setLocation] = useState(window.location.hash);
     const [allProperties, setAllProperties] = useState<Property[]>([]);
-    
-    useEffect(() => {
-        setAllProperties(getProperties());
+    const [isLoading, setIsLoading] = useState(true);
+
+    const loadProperties = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const props = await getProperties();
+            setAllProperties(props);
+        } catch (error) {
+            console.error("Failed to load properties:", error);
+            // You could set an error state here to show a message to the user
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    const handlePropertiesUpdate = (updatedProperties: Property[]) => {
-        setAllProperties(updatedProperties);
-        saveProperties(updatedProperties);
-    };
+    useEffect(() => {
+        loadProperties();
+    }, [loadProperties]);
 
     useEffect(() => {
         const handleHashChange = () => setLocation(window.location.hash);
@@ -796,8 +795,12 @@ const App: React.FC = () => {
     if (location.startsWith('#/dashboard')) {
         return <AdminDashboard 
             properties={allProperties}
-            onPropertiesUpdate={handlePropertiesUpdate}
+            onDataChange={loadProperties}
         />;
+    }
+    
+    if (isLoading) {
+        return <LoadingSpinner />;
     }
 
     return <PublicSite properties={allProperties} />;
