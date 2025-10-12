@@ -3,16 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Property } from './types';
 import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon } from './components/icons';
 
-// Fix: Add a global declaration for `window.google` to inform TypeScript about the Google Identity Services library.
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
 // --- DATABASE HELPERS (localStorage simulation) ---
 const DB_PROPERTIES_KEY = 'leandroCorretorProperties';
-const DB_USERS_KEY = 'leandroCorretorAuthorizedUsers';
 
 const getProperties = (): Property[] => {
   try {
@@ -26,19 +18,6 @@ const getProperties = (): Property[] => {
 
 const saveProperties = (properties: Property[]) => {
   localStorage.setItem(DB_PROPERTIES_KEY, JSON.stringify(properties));
-};
-
-const getAuthorizedUsers = (): string[] => {
-    try {
-        const users = localStorage.getItem(DB_USERS_KEY);
-        return users ? JSON.parse(users) : [];
-    } catch (e) {
-        return [];
-    }
-};
-
-const saveAuthorizedUsers = (users: string[]) => {
-    localStorage.setItem(DB_USERS_KEY, JSON.stringify(users));
 };
 
 // --- PUBLIC SITE COMPONENTS ---
@@ -56,7 +35,7 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => (
         <img src={property.imageUrls[property.mainImageIndex] || 'https://picsum.photos/800/600'} alt={property.title} className="w-full h-48 object-cover" />
         <div className="p-4 text-gray-800">
             <h3 className="text-xl font-bold mb-2 truncate">{property.title}</h3>
-            <p className="text-gray-600 mb-2">{property.location}</p>
+            <p className="text-gray-600 mb-2">{`${property.neighborhood}, ${property.city}`}</p>
             <p className="text-2xl font-light text-green-700 mb-4">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.price)}
             </p>
@@ -218,7 +197,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
                         <span>{t('speakToMe')}</span>
                         <span className="font-sans" aria-hidden="true">&rarr;</span>
                     </a>
-                    <a href="#/admin" className="bg-[#34495e] hover:bg-[#2c3e50] text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center space-x-2 transition duration-300 w-full sm:w-auto">
+                    <a href="#/dashboard" className="bg-[#34495e] hover:bg-[#2c3e50] text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center space-x-2 transition duration-300 w-full sm:w-auto">
                         <span>{t('brokerArea')}</span>
                         <span className="font-sans" aria-hidden="true">&rarr;</span>
                     </a>
@@ -348,76 +327,6 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
 
 // --- ADMIN COMPONENTS ---
 
-const AdminLogin: React.FC<{ onLoginSuccess: (user: any) => void }> = ({ onLoginSuccess }) => {
-    const [authError, setAuthError] = useState('');
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    const desktopBg = "https://i.postimg.cc/pLzhXxt5/TELA-LOGIN-LEANDRO.png";
-    const mobileBg = "https://i.postimg.cc/gkXQgVp2/Foto-Leandro.jpg";
-    const bgImage = isMobile ? mobileBg : desktopBg;
-
-    const handleCredentialResponse = useCallback((response: any) => {
-        try {
-            const idToken = response.credential;
-            const userObject = JSON.parse(atob(idToken.split('.')[1]));
-            const email = userObject.email;
-
-            let users = getAuthorizedUsers();
-            if (users.length < 2 && !users.includes(email)) {
-                users.push(email);
-                saveAuthorizedUsers(users);
-            }
-
-            if (users.includes(email)) {
-                onLoginSuccess(userObject);
-            } else {
-                setAuthError("Acesso negado – somente credenciais autorizadas conseguem acessar a página.");
-            }
-        } catch (e) {
-            console.error("Login Error:", e);
-            setAuthError("Ocorreu um erro durante o login.");
-        }
-    }, [onLoginSuccess]);
-
-    useEffect(() => {
-        if (window.google) {
-            window.google.accounts.id.initialize({
-                client_id: '104915699741-a18m855e5j4s2553254h288bodf2a41a.apps.googleusercontent.com', // Generic public client ID
-                callback: handleCredentialResponse,
-            });
-            window.google.accounts.id.renderButton(
-                document.getElementById("google-signin-button")!,
-                { theme: "outline", size: "large", type: "standard", text: "signin_with" }
-            );
-        }
-    }, [handleCredentialResponse]);
-
-    return (
-        <div className="h-screen w-screen bg-cover bg-center flex items-center justify-center" style={{backgroundImage: `url('${bgImage}')`}}>
-            <div className="absolute inset-0 bg-black/60"></div>
-            <div className="relative bg-blue-950/50 backdrop-blur-sm p-8 md:p-12 rounded-2xl shadow-2xl text-center max-w-md w-full mx-4 animate-fade-in">
-                <h1 className="text-3xl font-bold text-white mb-2">Área Restrita</h1>
-                <p className="text-gray-300 mb-6">Acesso exclusivo para corretores.</p>
-                <div id="google-signin-button" className="flex justify-center mb-4"></div>
-                {authError && <p className="text-red-400 font-semibold mt-4">{authError}</p>}
-                <div className="mt-8">
-                    <a href="/#" className="text-gray-200 hover:underline">
-                        <i className="fa-solid fa-arrow-left mr-2"></i>Voltar ao site
-                    </a>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const PropertyForm: React.FC<{
   onSubmit: (property: Omit<Property, 'id'>) => void;
   onCancel: () => void;
@@ -425,7 +334,7 @@ const PropertyForm: React.FC<{
 }> = ({ onSubmit, onCancel, initialData }) => {
     const [formData, setFormData] = useState({
         title: '', description: '', type: '', category: 'venda' as 'venda' | 'aluguel',
-        price: 0, location: '', bedrooms: 0, bathrooms: 0, area: 0
+        price: 0, neighborhood: '', city: '', bedrooms: 0, bathrooms: 0, area: 0
     });
     const [imageUrls, setImageUrls] = useState<string[]>([]);
     const [mainImageIndex, setMainImageIndex] = useState(0);
@@ -436,8 +345,9 @@ const PropertyForm: React.FC<{
         if (initialData) {
             setFormData({
                 title: initialData.title, description: initialData.description, type: initialData.type,
-                category: initialData.category, price: initialData.price, location: initialData.location,
-                bedrooms: initialData.bedrooms, bathrooms: initialData.bathrooms, area: initialData.area
+                category: initialData.category, price: initialData.price, neighborhood: initialData.neighborhood, 
+                city: initialData.city, bedrooms: initialData.bedrooms, bathrooms: initialData.bathrooms, 
+                area: initialData.area
             });
             setImageUrls(initialData.imageUrls);
             setMainImageIndex(initialData.mainImageIndex);
@@ -456,7 +366,6 @@ const PropertyForm: React.FC<{
             return;
         }
         setIsUploading(true);
-        // Fix: Explicitly type `file` as `File` to resolve TypeScript inference issue.
         const promises = files.map((file: File) => {
             return new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
@@ -487,7 +396,8 @@ const PropertyForm: React.FC<{
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
         if (!formData.title.trim()) newErrors.title = "O título é obrigatório.";
-        if (!formData.location.trim()) newErrors.location = "A localização é obrigatória.";
+        if (!formData.neighborhood.trim()) newErrors.neighborhood = "O bairro é obrigatório.";
+        if (!formData.city.trim()) newErrors.city = "A cidade é obrigatória.";
         if (!formData.description.trim()) newErrors.description = "A descrição é obrigatória.";
         if (!formData.type.trim()) newErrors.type = "O tipo de imóvel é obrigatório.";
         
@@ -527,16 +437,22 @@ const PropertyForm: React.FC<{
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">{initialData ? 'Editar Imóvel' : 'Cadastrar Novo Imóvel'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Basic Info */}
+                    <div>
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700">Título</label>
+                        <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                        {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label htmlFor="title" className="block text-sm font-medium text-gray-700">Título</label>
-                            <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
-                            {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
+                            <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700">Bairro</label>
+                            <input type="text" name="neighborhood" id="neighborhood" value={formData.neighborhood} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.neighborhood ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            {errors.neighborhood && <p className="mt-1 text-xs text-red-600">{errors.neighborhood}</p>}
                         </div>
                         <div>
-                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Localização</label>
-                            <input type="text" name="location" id="location" value={formData.location} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.location ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
-                            {errors.location && <p className="mt-1 text-xs text-red-600">{errors.location}</p>}
+                            <label htmlFor="city" className="block text-sm font-medium text-gray-700">Cidade</label>
+                            <input type="text" name="city" id="city" value={formData.city} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.city ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            {errors.city && <p className="mt-1 text-xs text-red-600">{errors.city}</p>}
                         </div>
                     </div>
 
@@ -642,11 +558,9 @@ const PropertyForm: React.FC<{
 
 
 const AdminDashboard: React.FC<{
-    user: any;
-    onLogout: () => void;
     properties: Property[];
     onPropertiesUpdate: (properties: Property[]) => void;
-}> = ({ user, onLogout, properties, onPropertiesUpdate }) => {
+}> = ({ properties, onPropertiesUpdate }) => {
     const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [filterCategory, setFilterCategory] = useState<'all' | 'venda' | 'aluguel'>('all');
@@ -695,7 +609,8 @@ const AdminDashboard: React.FC<{
         const matchesSearch = searchTerm === '' || 
             p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
             p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.location.toLowerCase().includes(searchTerm.toLowerCase());
+            p.neighborhood.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.city.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesType && matchesSearch;
     });
     
@@ -724,11 +639,10 @@ const AdminDashboard: React.FC<{
                         <h1 className="text-xl font-bold text-gray-800">Dashboard de Imóveis</h1>
                      </div>
                     <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-600 hidden sm:block">Olá, {user.given_name || user.name}!</span>
-                        <img src={user.picture} alt="User" className="w-9 h-9 rounded-full" />
-                        <button onClick={onLogout} className="text-sm text-gray-600 hover:text-indigo-600" title="Sair">
-                            <i className="fa-solid fa-right-from-bracket text-lg"></i>
-                        </button>
+                        <a href="/#" className="text-sm text-gray-600 hover:text-indigo-600 font-medium flex items-center space-x-2">
+                           <i className="fa-solid fa-arrow-left"></i>
+                           <span>Voltar ao Site</span>
+                        </a>
                     </div>
                 </div>
             </header>
@@ -799,7 +713,7 @@ const AdminDashboard: React.FC<{
                                       <h3 className="text-lg font-bold text-gray-800 truncate pr-2">{prop.title}</h3>
                                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
                                     </div>
-                                    <p className="text-sm text-gray-500 mb-2">{prop.type} • {prop.location}</p>
+                                    <p className="text-sm text-gray-500 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
                                     <p className="text-gray-600 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
                                     <p className="text-xl font-semibold text-gray-900 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
                                 </div>
@@ -827,7 +741,6 @@ const AdminDashboard: React.FC<{
 
 const App: React.FC = () => {
     const [location, setLocation] = useState(window.location.hash);
-    const [user, setUser] = useState<any>(null);
     const [allProperties, setAllProperties] = useState<Property[]>([]);
     
     useEffect(() => {
@@ -845,53 +758,8 @@ const App: React.FC = () => {
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
-    const handleLoginSuccess = (loggedInUser: any) => {
-        setUser(loggedInUser);
-        sessionStorage.setItem('leandroCorretorUser', JSON.stringify(loggedInUser));
-        window.location.hash = '#/dashboard';
-    };
-
-    const handleLogout = () => {
-        setUser(null);
-        sessionStorage.removeItem('leandroCorretorUser');
-        if (window.google) {
-            window.google.accounts.id.disableAutoSelect();
-        }
-        window.location.hash = '#/admin';
-    };
-    
-    useEffect(() => {
-        try {
-            const sessionUser = sessionStorage.getItem('leandroCorretorUser');
-            if (sessionUser) {
-                const parsedUser = JSON.parse(sessionUser);
-                 const users = getAuthorizedUsers();
-                 if (users.includes(parsedUser.email)) {
-                    setUser(parsedUser);
-                 } else {
-                    handleLogout();
-                 }
-            }
-        } catch (e) { console.error("Failed to parse session user", e)}
-    }, []);
-
-
-    if (location.startsWith('#/admin')) {
-        if(user) {
-            window.location.hash = '#/dashboard';
-            return null;
-        }
-        return <AdminLogin onLoginSuccess={handleLoginSuccess} />;
-    }
-
     if (location.startsWith('#/dashboard')) {
-        if (!user) {
-             window.location.hash = '#/admin';
-             return <LoadingSpinner />;
-        }
         return <AdminDashboard 
-            user={user} 
-            onLogout={handleLogout} 
             properties={allProperties}
             onPropertiesUpdate={handlePropertiesUpdate}
         />;

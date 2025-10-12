@@ -6,7 +6,8 @@ export interface Property {
   type: string; // 'Apartamento', 'Casa', etc.
   category: 'venda' | 'aluguel';
   price: number;
-  location: string;
+  neighborhood: string;
+  city: string;
   bedrooms: number;
   bathrooms: number;
   area: number;
