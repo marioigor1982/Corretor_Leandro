@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Property } from './types';
 import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon } from './components/icons';
@@ -491,10 +490,23 @@ const PropertyForm: React.FC<{
         if (!formData.location.trim()) newErrors.location = "A localização é obrigatória.";
         if (!formData.description.trim()) newErrors.description = "A descrição é obrigatória.";
         if (!formData.type.trim()) newErrors.type = "O tipo de imóvel é obrigatório.";
-        if (formData.price <= 0) newErrors.price = "O valor deve ser um número positivo.";
-        if (formData.area <= 0) newErrors.area = "A área deve ser um número positivo.";
-        if (formData.bedrooms < 0) newErrors.bedrooms = "O número de quartos não pode ser negativo.";
-        if (formData.bathrooms < 0) newErrors.bathrooms = "O número de banheiros não pode ser negativo.";
+        
+        if (isNaN(formData.price) || formData.price <= 0) {
+            newErrors.price = "O valor é obrigatório e deve ser maior que zero.";
+        }
+        
+        if (isNaN(formData.area) || formData.area <= 0) {
+            newErrors.area = "A área é obrigatória e deve ser maior que zero.";
+        }
+        
+        if (isNaN(formData.bedrooms) || formData.bedrooms < 0 || !Number.isInteger(formData.bedrooms)) {
+            newErrors.bedrooms = "O nº de quartos deve ser um inteiro (0 ou mais).";
+        }
+
+        if (isNaN(formData.bathrooms) || formData.bathrooms < 0 || !Number.isInteger(formData.bathrooms)) {
+            newErrors.bathrooms = "O nº de banheiros deve ser um inteiro (0 ou mais).";
+        }
+        
         if (imageUrls.length === 0) newErrors.images = "É necessário enviar pelo menos uma foto.";
 
         setErrors(newErrors);
@@ -538,7 +550,7 @@ const PropertyForm: React.FC<{
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div>
                             <label htmlFor="price" className="block text-sm font-medium text-gray-700">Valor (R$)</label>
-                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.price ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="1" step="any" placeholder="Ex: 250000" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.price ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
                             {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
                         </div>
                         <div>
@@ -555,17 +567,17 @@ const PropertyForm: React.FC<{
                         </div>
                         <div>
                              <label htmlFor="area" className="block text-sm font-medium text-gray-700">Área (m²)</label>
-                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.area ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required min="1" placeholder="Ex: 50" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.area ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
                             {errors.area && <p className="mt-1 text-xs text-red-600">{errors.area}</p>}
                         </div>
                          <div>
                             <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700">Quartos</label>
-                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.bedrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required min="0" step="1" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.bedrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
                              {errors.bedrooms && <p className="mt-1 text-xs text-red-600">{errors.bedrooms}</p>}
                         </div>
                         <div>
                             <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700">Banheiros</label>
-                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.bathrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required min="0" step="1" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.bathrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
                              {errors.bathrooms && <p className="mt-1 text-xs text-red-600">{errors.bathrooms}</p>}
                         </div>
                     </div>
