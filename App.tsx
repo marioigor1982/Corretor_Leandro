@@ -431,6 +431,7 @@ const PropertyForm: React.FC<{
     const [imageUrls, setImageUrls] = useState<string[]>([]);
     const [mainImageIndex, setMainImageIndex] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (initialData) {
@@ -484,10 +485,25 @@ const PropertyForm: React.FC<{
         }
     };
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.title.trim()) newErrors.title = "O título é obrigatório.";
+        if (!formData.location.trim()) newErrors.location = "A localização é obrigatória.";
+        if (!formData.description.trim()) newErrors.description = "A descrição é obrigatória.";
+        if (!formData.type.trim()) newErrors.type = "O tipo de imóvel é obrigatório.";
+        if (formData.price <= 0) newErrors.price = "O valor deve ser um número positivo.";
+        if (formData.area <= 0) newErrors.area = "A área deve ser um número positivo.";
+        if (formData.bedrooms < 0) newErrors.bedrooms = "O número de quartos não pode ser negativo.";
+        if (formData.bathrooms < 0) newErrors.bathrooms = "O número de banheiros não pode ser negativo.";
+        if (imageUrls.length === 0) newErrors.images = "É necessário enviar pelo menos uma foto.";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (imageUrls.length === 0) {
-            alert('Por favor, envie pelo menos uma foto.');
+        if (!validateForm()) {
             return;
         }
         onSubmit({ ...formData, imageUrls, mainImageIndex });
@@ -502,28 +518,33 @@ const PropertyForm: React.FC<{
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="title" className="block text-sm font-medium text-gray-700">Título</label>
-                            <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
                         </div>
                         <div>
                             <label htmlFor="location" className="block text-sm font-medium text-gray-700">Localização</label>
-                            <input type="text" name="location" id="location" value={formData.location} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="text" name="location" id="location" value={formData.location} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.location ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            {errors.location && <p className="mt-1 text-xs text-red-600">{errors.location}</p>}
                         </div>
                     </div>
 
                     <div>
                         <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descrição</label>
-                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.description ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}></textarea>
+                        {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
                     </div>
 
                     {/* Details */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div>
                             <label htmlFor="price" className="block text-sm font-medium text-gray-700">Valor (R$)</label>
-                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.price ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
                         </div>
                         <div>
                             <label htmlFor="type" className="block text-sm font-medium text-gray-700">Tipo (Ex: Casa)</label>
-                            <input type="text" name="type" id="type" value={formData.type} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Casa, Apartamento..."/>
+                            <input type="text" name="type" id="type" value={formData.type} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.type ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`} placeholder="Casa, Apartamento..."/>
+                            {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
                         </div>
                         <div>
                             <label htmlFor="category" className="block text-sm font-medium text-gray-700">Categoria</label>
@@ -534,22 +555,25 @@ const PropertyForm: React.FC<{
                         </div>
                         <div>
                              <label htmlFor="area" className="block text-sm font-medium text-gray-700">Área (m²)</label>
-                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.area ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            {errors.area && <p className="mt-1 text-xs text-red-600">{errors.area}</p>}
                         </div>
                          <div>
                             <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700">Quartos</label>
-                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.bedrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                             {errors.bedrooms && <p className="mt-1 text-xs text-red-600">{errors.bedrooms}</p>}
                         </div>
                         <div>
                             <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700">Banheiros</label>
-                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.bathrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                             {errors.bathrooms && <p className="mt-1 text-xs text-red-600">{errors.bathrooms}</p>}
                         </div>
                     </div>
                     
                     {/* Image Upload */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Fotos (até 10)</label>
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${errors.images ? 'border-red-500' : 'border-gray-300'}`}>
                             <div className="space-y-1 text-center">
                                 <i className="fa-solid fa-image text-4xl text-gray-400 mx-auto"></i>
                                 <div className="flex text-sm text-gray-600">
@@ -562,6 +586,7 @@ const PropertyForm: React.FC<{
                                 <p className="text-xs text-gray-500">{10 - imageUrls.length} restantes</p>
                             </div>
                         </div>
+                         {errors.images && <p className="mt-1 text-xs text-red-600">{errors.images}</p>}
                     </div>
 
                     {isUploading && <LoadingSpinner />}
