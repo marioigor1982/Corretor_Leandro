@@ -13,4 +13,5 @@ export interface Property {
   area: number;
   imageUrls: string[]; // Base64 encoded strings
   mainImageIndex: number;
+  isFeatured: boolean;
 }

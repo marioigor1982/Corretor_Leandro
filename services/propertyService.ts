@@ -29,6 +29,7 @@ const initializeData = () => {
           area: 65,
           imageUrls: ["https://i.postimg.cc/Vv9Td2sV/6e7e5047-6cb8-44ec-9223-55d354d7eb6e.jpg"],
           mainImageIndex: 0,
+          isFeatured: true,
         },
         {
           id: 2,
@@ -44,6 +45,7 @@ const initializeData = () => {
           area: 150,
           imageUrls: ["https://i.postimg.cc/qqcYzWBZ/93ebed18-1f23-47df-8ec9-f4727215f637.jpg"],
           mainImageIndex: 0,
+          isFeatured: true,
         }
       ];
       syncDb();

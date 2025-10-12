@@ -101,13 +101,15 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
       }
     }, 4000);
   }, []);
+  
+  const featuredProperties = properties.filter(p => p.isFeatured);
 
   useEffect(() => {
-    if (properties.length > 0) {
+    if (featuredProperties.length > 0) {
       startAutoScroll();
     }
     return () => stopAutoScroll();
-  }, [properties, startAutoScroll]);
+  }, [featuredProperties, startAutoScroll]);
 
 
   return (
@@ -191,12 +193,12 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
           <section id="destaques" className="py-20 bg-gray-50">
               <div className="container mx-auto px-6 relative">
                   <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">{t('highlights')}</h2>
-                  {properties.length === 0 ? (
+                  {featuredProperties.length === 0 ? (
                     <p className="text-center text-gray-500">{t('noProperties')}</p>
                   ) : (
                       <>
                         <div className="flex space-x-8 pb-4 -mx-6 px-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide" ref={scrollContainerRef} onMouseEnter={stopAutoScroll} onMouseLeave={startAutoScroll}>
-                              {properties.slice(0, 9).map(property => (
+                              {featuredProperties.slice(0, 9).map(property => (
                                   <PropertyCard key={property.id} property={property} />
                               ))}
                         </div>
@@ -317,7 +319,8 @@ const PropertyForm: React.FC<{
 }> = ({ onSubmit, onCancel, initialData }) => {
     const [formData, setFormData] = useState({
         title: '', description: '', type: '', category: 'venda' as 'venda' | 'aluguel',
-        price: 0, neighborhood: '', city: '', bedrooms: 0, bathrooms: 0, area: 0
+        price: 0, neighborhood: '', city: '', bedrooms: 0, bathrooms: 0, area: 0,
+        isFeatured: false,
     });
     const [imageUrls, setImageUrls] = useState<string[]>([]);
     const [mainImageIndex, setMainImageIndex] = useState(0);
@@ -330,7 +333,8 @@ const PropertyForm: React.FC<{
                 title: initialData.title, description: initialData.description, type: initialData.type,
                 category: initialData.category, price: initialData.price, neighborhood: initialData.neighborhood, 
                 city: initialData.city, bedrooms: initialData.bedrooms, bathrooms: initialData.bathrooms, 
-                area: initialData.area
+                area: initialData.area,
+                isFeatured: initialData.isFeatured,
             });
             setImageUrls(initialData.imageUrls);
             setMainImageIndex(initialData.mainImageIndex);
@@ -338,8 +342,14 @@ const PropertyForm: React.FC<{
     }, [initialData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'price' || name === 'bedrooms' || name === 'bathrooms' || name === 'area' ? parseFloat(value) : value }));
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
+        setFormData(prev => ({ 
+            ...prev, 
+            [name]: type === 'checkbox' 
+                ? checked 
+                : (name === 'price' || name === 'bedrooms' || name === 'bathrooms' || name === 'area' ? parseFloat(value) : value) 
+        }));
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -481,6 +491,26 @@ const PropertyForm: React.FC<{
                         </div>
                     </div>
                     
+                    {/* Featured Checkbox */}
+                    <div className="pt-4">
+                        <div className="flex items-start">
+                            <div className="flex items-center h-5">
+                                <input
+                                    id="isFeatured"
+                                    name="isFeatured"
+                                    type="checkbox"
+                                    checked={formData.isFeatured}
+                                    onChange={handleChange}
+                                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                                />
+                            </div>
+                            <div className="ml-3 text-sm">
+                                <label htmlFor="isFeatured" className="font-medium text-gray-700">Marcar como Destaque</label>
+                                <p className="text-gray-500">Imóveis em destaque aparecem na página inicial.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Image Upload */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Fotos (até 10)</label>
@@ -736,7 +766,14 @@ const AdminDashboard: React.FC<{
                                 <div className="p-4 flex flex-col flex-grow">
                                     <div className="flex justify-between items-start">
                                       <h3 className="text-lg font-bold text-gray-800 truncate pr-2">{prop.title}</h3>
-                                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
+                                      <div className="flex items-center space-x-2 flex-shrink-0">
+                                        {prop.isFeatured && (
+                                            <div title="Em destaque" className="text-yellow-500">
+                                                <i className="fa-solid fa-star"></i>
+                                            </div>
+                                        )}
+                                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
+                                      </div>
                                     </div>
                                     <p className="text-sm text-gray-500 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
                                     <p className="text-gray-600 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
