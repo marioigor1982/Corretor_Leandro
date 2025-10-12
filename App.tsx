@@ -566,6 +566,9 @@ const AdminDashboard: React.FC<{
     const [filterCategory, setFilterCategory] = useState<'all' | 'venda' | 'aluguel'>('all');
     const [filterType, setFilterType] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
+    const [priceRange, setPriceRange] = useState<string>('all');
+    const [minBedrooms, setMinBedrooms] = useState<string>('');
+    const [maxBedrooms, setMaxBedrooms] = useState<string>('');
 
     const handleAddClick = () => {
         if (properties.length >= 100) {
@@ -611,7 +614,20 @@ const AdminDashboard: React.FC<{
             p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.neighborhood.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.city.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesCategory && matchesType && matchesSearch;
+
+        const matchesPrice = (() => {
+            if (priceRange === 'all') return true;
+            if (priceRange === '0-100000') return p.price <= 100000;
+            if (priceRange === '100001-300000') return p.price > 100000 && p.price <= 300000;
+            if (priceRange === '300001-') return p.price > 300000;
+            return true;
+        })();
+
+        const minBeds = minBedrooms !== '' ? parseInt(minBedrooms, 10) : -1;
+        const maxBeds = maxBedrooms !== '' ? parseInt(maxBedrooms, 10) : Infinity;
+        const matchesBedrooms = p.bedrooms >= minBeds && p.bedrooms <= maxBeds;
+        
+        return matchesCategory && matchesType && matchesSearch && matchesPrice && matchesBedrooms;
     });
     
     const stats = {
@@ -699,6 +715,16 @@ const AdminDashboard: React.FC<{
                             <i className="fa-solid fa-plus"></i>
                             <span>Cadastrar Imóvel</span>
                         </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center border-t border-gray-200 mt-4 pt-4">
+                        <select value={priceRange} onChange={e => setPriceRange(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="all">Faixa de Preço (Todas)</option>
+                            <option value="0-100000">Até R$100.000</option>
+                            <option value="100001-300000">R$100.001 - R$300.000</option>
+                            <option value="300001-">Acima de R$300.000</option>
+                        </select>
+                        <input type="number" placeholder="Quartos (mín)" min="0" value={minBedrooms} onChange={e => setMinBedrooms(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                        <input type="number" placeholder="Quartos (máx)" min="0" value={maxBedrooms} onChange={e => setMaxBedrooms(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
                     </div>
                 </div>
 
