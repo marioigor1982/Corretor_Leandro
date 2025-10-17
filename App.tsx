@@ -44,7 +44,7 @@ const LoginScreen: React.FC<{ onLoginSuccess: (user: User) => void; }> = ({ onLo
         if (window.google) {
             window.google.accounts.id.initialize({
                 // IMPORTANT: Replace with your actual Google Client ID
-                client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+                client_id: '396869408013-4h18v6c4jb99f8s1qc3h2csj5ed5mq1f.apps.googleusercontent.com',
                 callback: handleLoginSuccess,
             });
             window.google.accounts.id.renderButton(
@@ -66,6 +66,10 @@ const LoginScreen: React.FC<{ onLoginSuccess: (user: User) => void; }> = ({ onLo
 
             {/* Right Pane / Mobile View */}
             <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 relative">
+                 <a href="#/" className="absolute top-6 left-6 z-20 flex items-center space-x-2 text-white md:text-gray-700 hover:text-gray-300 md:hover:text-black transition-colors font-medium">
+                    <i className="fa-solid fa-arrow-left"></i>
+                    <span>Voltar à página inicial</span>
+                </a>
                 {/* Mobile Background */}
                 <div className="md:hidden absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg')" }}>
                     <div className="absolute inset-0 bg-black/50"></div>
