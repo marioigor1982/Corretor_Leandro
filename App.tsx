@@ -26,6 +26,14 @@ const LoginScreen: React.FC<{ onLoginSuccess: (user: User) => void; }> = ({ onLo
                 picture: userObject.picture,
             };
             
+            if (user.email !== 'mario.igor1982@gmail.com') {
+                alert("Acesso restrito. Somente o administrador pode fazer login.");
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    window.google.accounts.id.disableAutoSelect();
+                }
+                return; // Stop the login process for unauthorized users
+            }
+
             // TODO: Firebase Integration - Sign in with Firebase after getting the idToken
             // import { auth } from './services/firebase'; // (you'll need to create this file)
             // import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
