@@ -5,7 +5,7 @@ declare global {
   }
 }
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Property, User } from './types';
 import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon, LogoutIcon } from './components/icons';
 import { getProperties, addProperty, updateProperty, deleteProperty } from './services/propertyService';
@@ -26,14 +26,6 @@ const LoginScreen: React.FC<{ onLoginSuccess: (user: User) => void; }> = ({ onLo
                 picture: userObject.picture,
             };
             
-            if (user.email !== 'mario.igor1982@gmail.com') {
-                alert("Acesso restrito. Somente o administrador pode fazer login.");
-                if (window.google && window.google.accounts && window.google.accounts.id) {
-                    window.google.accounts.id.disableAutoSelect();
-                }
-                return; // Stop the login process for unauthorized users
-            }
-
             // TODO: Firebase Integration - Sign in with Firebase after getting the idToken
             // import { auth } from './services/firebase'; // (you'll need to create this file)
             // import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
@@ -137,6 +129,11 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
   const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'fr' | 'de' | 'it' | 'ja' | 'ko' | 'zh' | 'ru'>('pt');
   const [visits, setVisits] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const [filterType, setFilterType] = useState('');
+  const [filterNeighborhood, setFilterNeighborhood] = useState('');
+  const [filterCity, setFilterCity] = useState('');
+  const [filterPrice, setFilterPrice] = useState('all');
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const autoScrollIntervalRef = useRef<number | null>(null);
@@ -194,14 +191,43 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
     }, 4000);
   }, []);
   
-  const featuredProperties = properties.filter(p => p.isFeatured);
+  const featuredProperties = useMemo(() => properties.filter(p => p.isFeatured), [properties]);
+    
+  const uniqueTypes = useMemo(() => [...new Set(featuredProperties.map(p => p.type).filter(Boolean))].sort(), [featuredProperties]);
+  const uniqueCities = useMemo(() => [...new Set(featuredProperties.map(p => p.city).filter(Boolean))].sort(), [featuredProperties]);
+  const uniqueNeighborhoods = useMemo(() => [...new Set(featuredProperties.map(p => p.neighborhood).filter(Boolean))].sort(), [featuredProperties]);
+
+  const handleClearFilters = () => {
+      setFilterType('');
+      setFilterCity('');
+      setFilterNeighborhood('');
+      setFilterPrice('all');
+  };
+
+  const filteredFeaturedProperties = useMemo(() => {
+      return featuredProperties.filter(p => {
+          const matchesType = !filterType || p.type === filterType;
+          const matchesCity = !filterCity || p.city === filterCity;
+          const matchesNeighborhood = !filterNeighborhood || p.neighborhood === filterNeighborhood;
+          
+          const matchesPrice = (() => {
+              if (filterPrice === 'all') return true;
+              const [min, max] = filterPrice.split('-').map(Number);
+              if (isNaN(max)) return p.price >= min; // Case for "600001-"
+              return p.price >= min && p.price <= max;
+          })();
+
+          return matchesType && matchesCity && matchesNeighborhood && matchesPrice;
+      });
+  }, [featuredProperties, filterType, filterCity, filterNeighborhood, filterPrice]);
+
 
   useEffect(() => {
-    if (featuredProperties.length > 0) {
+    if (filteredFeaturedProperties.length > 0) {
       startAutoScroll();
     }
     return () => stopAutoScroll();
-  }, [featuredProperties, startAutoScroll]);
+  }, [filteredFeaturedProperties, startAutoScroll]);
 
 
   return (
@@ -283,14 +309,60 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
           </section>
 
           <section id="destaques" className="py-20 bg-gray-50">
-              <div className="container mx-auto px-6 relative">
-                  <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">{t('highlights')}</h2>
+            <div className="container mx-auto px-6">
+                <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">{t('highlights')}</h2>
+
+                {featuredProperties.length > 0 && (
+                    <div className="bg-white p-4 md:p-6 rounded-lg shadow-md mb-12 animate-fade-in">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                            <div>
+                                <label htmlFor="filterType" className="block text-sm font-medium text-gray-700">Tipo de Imóvel</label>
+                                <select id="filterType" value={filterType} onChange={e => setFilterType(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Todos</option>
+                                    {uniqueTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="filterCity" className="block text-sm font-medium text-gray-700">Cidade</label>
+                                <select id="filterCity" value={filterCity} onChange={e => setFilterCity(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Todas</option>
+                                    {uniqueCities.map(city => <option key={city} value={city}>{city}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="filterNeighborhood" className="block text-sm font-medium text-gray-700">Bairro</label>
+                                <select id="filterNeighborhood" value={filterNeighborhood} onChange={e => setFilterNeighborhood(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Todos</option>
+                                    {uniqueNeighborhoods.map(hood => <option key={hood} value={hood}>{hood}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="filterPrice" className="block text-sm font-medium text-gray-700">Faixa de Valor</label>
+                                <select id="filterPrice" value={filterPrice} onChange={e => setFilterPrice(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="all">Qualquer Valor</option>
+                                    <option value="0-200000">Até R$ 200.000</option>
+                                    <option value="200001-400000">R$ 200.001 a R$ 400.000</option>
+                                    <option value="400001-600000">R$ 400.001 a R$ 600.000</option>
+                                    <option value="600001-">Acima de R$ 600.000</option>
+                                </select>
+                            </div>
+                            <button onClick={handleClearFilters} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center space-x-2 transition-colors sm:text-sm">
+                                <i className="fa-solid fa-eraser"></i>
+                                <span>Limpar</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                <div className="relative">
                   {featuredProperties.length === 0 ? (
-                    <p className="text-center text-gray-500">{t('noProperties')}</p>
+                    <p className="text-center text-gray-500 py-10">{t('noProperties')}</p>
+                  ) : filteredFeaturedProperties.length === 0 ? (
+                    <p className="text-center text-gray-500 py-10">Nenhum imóvel encontrado com os filtros selecionados. Tente ajustar sua busca.</p>
                   ) : (
                       <>
                         <div className="flex space-x-8 pb-4 -mx-6 px-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide" ref={scrollContainerRef} onMouseEnter={stopAutoScroll} onMouseLeave={startAutoScroll}>
-                              {featuredProperties.slice(0, 9).map(property => (
+                              {filteredFeaturedProperties.map(property => (
                                   <PropertyCard key={property.id} property={property} />
                               ))}
                         </div>
@@ -302,6 +374,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
                         </button>
                       </>
                   )}
+                </div>
               </div>
           </section>
 
