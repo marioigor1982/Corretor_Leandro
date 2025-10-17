@@ -1,4 +1,10 @@
 
+export interface User {
+  name: string;
+  email: string;
+  picture: string;
+}
+
 export interface Property {
   id: number;
   title: string;

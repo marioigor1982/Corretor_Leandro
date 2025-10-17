@@ -21,7 +21,7 @@ export const AreaIcon = () => (
 );
 
 export const LoadingSpinner = () => (
-    <div className="flex justify-center items-center p-8">
+    <div className="flex justify-center items-center p-8 h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
     </div>
 );
@@ -42,5 +42,11 @@ export const MapPinIcon = () => (
 export const StarIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293a1 1 0 01.293.707V9.586a1 1 0 01-.293.707L13 12.586l-1.707-1.707a1 1 0 00-1.414 0L8.293 12.586l-1.293-1.293a1 1 0 01-.293-.707V5.414a1 1 0 01.293-.707L9 3m4 0h2" />
+    </svg>
+);
+
+export const LogoutIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
     </svg>
 );

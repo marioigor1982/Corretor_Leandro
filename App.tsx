@@ -1,8 +1,87 @@
+// Fix: Add global declaration for window.google to fix TypeScript errors.
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Property } from './types';
-import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon } from './components/icons';
+import { Property, User } from './types';
+import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon, LogoutIcon } from './components/icons';
 import { getProperties, addProperty, updateProperty, deleteProperty } from './services/propertyService';
+
+// --- LOGIN COMPONENT ---
+
+const LoginScreen: React.FC<{ onLoginSuccess: (user: User) => void; }> = ({ onLoginSuccess }) => {
+    
+    const handleLoginSuccess = useCallback((credentialResponse: any) => {
+        // In a real app, you would send this to your backend/Firebase to verify and create a session.
+        // For this example, we'll decode it on the client to get user info.
+        try {
+            const idToken = credentialResponse.credential;
+            const userObject = JSON.parse(atob(idToken.split('.')[1]));
+            const user: User = {
+                name: userObject.name,
+                email: userObject.email,
+                picture: userObject.picture,
+            };
+            
+            // TODO: Firebase Integration - Sign in with Firebase after getting the idToken
+            // import { auth } from './services/firebase'; // (you'll need to create this file)
+            // import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+            // const credential = GoogleAuthProvider.credential(idToken);
+            // await signInWithCredential(auth, credential);
+            
+            localStorage.setItem('leandroCorretorUser', JSON.stringify(user));
+            onLoginSuccess(user);
+        } catch (error) {
+            console.error("Login failed:", error);
+            alert("Ocorreu um erro durante o login. Tente novamente.");
+        }
+    }, [onLoginSuccess]);
+
+    useEffect(() => {
+        if (window.google) {
+            window.google.accounts.id.initialize({
+                // IMPORTANT: Replace with your actual Google Client ID
+                client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+                callback: handleLoginSuccess,
+            });
+            window.google.accounts.id.renderButton(
+                document.getElementById('googleSignInButton'),
+                { theme: 'outline', size: 'large', width: '250', logo_alignment: 'left' }
+            );
+            // Optional: Show the One Tap prompt
+            // window.google.accounts.id.prompt(); 
+        } else {
+            console.error("Google Identity Services script not loaded.");
+        }
+    }, [handleLoginSuccess]);
+    
+    return (
+        <div className="min-h-screen flex bg-gray-100">
+            {/* Left Pane - Desktop */}
+            <div className="hidden md:flex w-1/2 bg-cover bg-center" style={{ backgroundImage: "url('https://i.postimg.cc/1znGLc6T/LOGO-LEANDRO.png')" }}>
+            </div>
+
+            {/* Right Pane / Mobile View */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 relative">
+                {/* Mobile Background */}
+                <div className="md:hidden absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg')" }}>
+                    <div className="absolute inset-0 bg-black/50"></div>
+                </div>
+
+                <div className="w-full max-w-sm bg-white md:bg-transparent shadow-lg md:shadow-none rounded-lg p-8 md:p-0 z-10 text-center">
+                    <img src="https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg" alt="Logo Corretor Leandro" className="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-white shadow-md md:hidden" />
+                    <h1 className="text-2xl font-bold text-gray-800 md:text-gray-900 mb-2">Área Restrita</h1>
+                    <p className="text-gray-500 md:text-gray-600 mb-8">Faça login para gerenciar os imóveis.</p>
+                    <div id="googleSignInButton" className="flex justify-center"></div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 // --- PUBLIC SITE COMPONENTS ---
 
@@ -573,8 +652,10 @@ const PropertyForm: React.FC<{
 
 const AdminDashboard: React.FC<{
     properties: Property[];
+    user: User;
     onDataChange: () => Promise<void>;
-}> = ({ properties, onDataChange }) => {
+    onLogout: () => void;
+}> = ({ properties, user, onDataChange, onLogout }) => {
     const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [filterCategory, setFilterCategory] = useState<'all' | 'venda' | 'aluguel'>('all');
@@ -682,10 +763,15 @@ const AdminDashboard: React.FC<{
                         <h1 className="text-xl font-bold text-gray-800">Dashboard de Imóveis</h1>
                      </div>
                     <div className="flex items-center space-x-4">
+                        <img src={user.picture} alt={user.name} title={user.email} className="w-9 h-9 rounded-full" />
                         <a href="/#" className="text-sm text-gray-600 hover:text-indigo-600 font-medium flex items-center space-x-2">
                            <i className="fa-solid fa-arrow-left"></i>
-                           <span>Voltar ao Site</span>
+                           <span className="hidden sm:inline">Voltar ao Site</span>
                         </a>
+                        <button onClick={onLogout} className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center space-x-2">
+                           <LogoutIcon />
+                           <span className="hidden sm:inline">Sair</span>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -828,6 +914,37 @@ const App: React.FC = () => {
     const [location, setLocation] = useState(window.location.hash);
     const [allProperties, setAllProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+    // Check for logged in user on mount
+    useEffect(() => {
+        // TODO: Firebase Integration - Replace localStorage with onAuthStateChanged
+        // This is the recommended way to get the current user.
+        // import { auth } from './services/firebase';
+        // import { onAuthStateChanged } from "firebase/auth";
+        // const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        //   if (firebaseUser) {
+        //     setUser({ name: firebaseUser.displayName!, email: firebaseUser.email!, picture: firebaseUser.photoURL! });
+        //   } else {
+        //     setUser(null);
+        //   }
+        //   setIsAuthLoading(false);
+        // });
+        // return () => unsubscribe();
+
+        try {
+            const storedUser = localStorage.getItem('leandroCorretorUser');
+            if (storedUser) {
+                setUser(JSON.parse(storedUser));
+            }
+        } catch (error) {
+            console.error("Failed to parse user from localStorage", error);
+            localStorage.removeItem('leandroCorretorUser');
+        }
+        setIsAuthLoading(false);
+    }, []);
+
 
     const loadProperties = useCallback(async () => {
         setIsLoading(true);
@@ -836,7 +953,6 @@ const App: React.FC = () => {
             setAllProperties(props);
         } catch (error) {
             console.error("Failed to load properties:", error);
-            // You could set an error state here to show a message to the user
         } finally {
             setIsLoading(false);
         }
@@ -852,14 +968,40 @@ const App: React.FC = () => {
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
+    const handleLogin = (loggedInUser: User) => {
+        setUser(loggedInUser);
+    };
+
+    const handleLogout = () => {
+        // TODO: Firebase Integration - Sign out from Firebase
+        // import { auth } from './services/firebase';
+        // import { signOut } from "firebase/auth";
+        // await signOut(auth);
+
+        if (window.google) {
+            window.google.accounts.id.disableAutoSelect();
+        }
+        localStorage.removeItem('leandroCorretorUser');
+        setUser(null);
+        window.location.hash = '#/'; // Redirect to home after logout
+    };
+
     if (location.startsWith('#/dashboard')) {
-        return <AdminDashboard 
-            properties={allProperties}
-            onDataChange={loadProperties}
-        />;
+        if (isAuthLoading) {
+             return <LoadingSpinner />;
+        }
+        if (user) {
+            return <AdminDashboard 
+                properties={allProperties}
+                user={user}
+                onDataChange={loadProperties}
+                onLogout={handleLogout}
+            />;
+        }
+        return <LoginScreen onLoginSuccess={handleLogin} />;
     }
     
-    if (isLoading) {
+    if (isLoading && !location.startsWith('#/dashboard')) {
         return <LoadingSpinner />;
     }
 
