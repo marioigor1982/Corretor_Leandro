@@ -14,6 +14,7 @@ export interface Property {
   price: number;
   neighborhood: string;
   city: string;
+  state: string; // UF, e.g., 'SP', 'RJ'
   bedrooms: number;
   bathrooms: number;
   area: number;
