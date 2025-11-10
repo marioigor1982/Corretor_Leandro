@@ -183,7 +183,7 @@ const PropertyModal: React.FC<{ property: Property, onClose: () => void }> = ({ 
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mt-4 border-b pb-2 mb-2">Descrição</h3>
                     <p className="text-gray-600 flex-grow text-base leading-relaxed">{property.description}</p>
-                     <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="mt-6 w-full text-center bg-[#6c9a8b] hover:bg-[#5a8a7b] text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center justify-center space-x-2 transition duration-300">
+                     <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="mt-6 w-full text-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center justify-center space-x-2 transition duration-300">
                         <span>Tenho Interesse</span>
                         <i className="fab fa-whatsapp"></i>
                     </a>
