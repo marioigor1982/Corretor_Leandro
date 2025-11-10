@@ -1,5 +1,4 @@
 
-
 // Fix: Add global declaration for window.google to fix TypeScript errors.
 declare global {
   interface Window {
@@ -480,6 +479,107 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
 
 // --- ADMIN COMPONENTS ---
 
+const PROPERTY_TYPES = [
+  // Imóveis Residenciais
+  "Casa", "Apartamento", "Sobrado", "Kitnet / Studio", "Loft", "Cobertura", "Duplex / Triplex", "Casa geminada", "Casa de condomínio", "Mansão", "Bangalô", "Chalé", "Flat", "Edícula", "Quitinete", "Casa térrea", "Casa de vila", "Casa de campo / Sítio residencial", "Fazenda com moradia", "Moradia estudantil / República",
+  // Imóveis Comerciais
+  "Sala comercial", "Loja / Ponto comercial", "Galpão", "Depósito / Armazém", "Escritório", "Andar comercial", "Quiosque", "Box comercial", "Auditório", "Salão comercial", "Centro empresarial", "Shopping center (loja ou espaço interno)", "Coworking",
+  // Imóveis Industriais
+  "Fábrica", "Galpão industrial", "Parque industrial", "Usina", "Hangar",
+  // Imóveis Rurais
+  "Sítio", "Fazenda", "Chácara", "Haras", "Granja", "Terreno rural", "Propriedade agropecuária",
+  // Terrenos e Lotes
+  "Lote urbano", "Terreno em condomínio", "Terreno comercial", "Terreno industrial", "Terreno agrícola", "Loteamento",
+  // Imóveis de Lazer / Temporada
+  "Casa de praia", "Casa de campo", "Chalé de montanha", "Pousada", "Resort", "Hotel / Motel", "Flat de temporada",
+  // Imóveis Institucionais / Especiais
+  "Escola", "Hospital / Clínica", "Igreja / Templo", "Teatro / Cinema", "Museu / Galeria", "Centro esportivo / Academia", "Estacionamento / Garagem", "Delegacia / Quartel / Prédio público"
+];
+
+const AutocompleteInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+  id: string;
+  name: string;
+  required?: boolean;
+  error?: boolean;
+}> = ({ value, onChange, options, placeholder, id, name, required, error }) => {
+    const [inputValue, setInputValue] = useState(value);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [isFocused, setIsFocused] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setInputValue(value);
+    }, [value]);
+    
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsFocused(false);
+                setSuggestions([]);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [wrapperRef]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const text = e.target.value;
+        setInputValue(text);
+        onChange(text); // Update parent form state immediately
+        if (text.length > 0) {
+            const filteredSuggestions = options.filter(option =>
+                option.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+            );
+            setSuggestions(filteredSuggestions);
+        } else {
+            setSuggestions([]);
+        }
+    };
+
+    const onSuggestionClick = (suggestion: string) => {
+        setInputValue(suggestion);
+        onChange(suggestion);
+        setSuggestions([]);
+        setIsFocused(false);
+    };
+
+    return (
+        <div className="relative" ref={wrapperRef}>
+            <input
+                type="text"
+                id={id}
+                name={name}
+                value={inputValue}
+                onChange={handleInputChange}
+                onFocus={() => setIsFocused(true)}
+                placeholder={placeholder}
+                required={required}
+                autoComplete="off"
+                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}
+            />
+            {(isFocused && inputValue.length > 0 && suggestions.length > 0) && (
+                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+                    {suggestions.map((suggestion, index) => (
+                        <li
+                            key={index}
+                            onClick={() => onSuggestionClick(suggestion)}
+                            className="px-4 py-2 cursor-pointer hover:bg-indigo-100"
+                        >
+                            {suggestion}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
 const PropertyForm: React.FC<{
   onSubmit: (property: Omit<Property, 'id'>) => void;
   onCancel: () => void;
@@ -518,6 +618,10 @@ const PropertyForm: React.FC<{
                 ? checked 
                 : (name === 'price' || name === 'bedrooms' || name === 'bathrooms' || name === 'area' ? parseFloat(value) : value) 
         }));
+    };
+    
+    const handleAutocompleteChange = (name: string, value: string) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -631,8 +735,17 @@ const PropertyForm: React.FC<{
                             {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
                         </div>
                         <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700">Tipo (Ex: Casa)</label>
-                            <input type="text" name="type" id="type" value={formData.type} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${errors.type ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`} placeholder="Casa, Apartamento..."/>
+                            <label htmlFor="type" className="block text-sm font-medium text-gray-700">Tipo de Imóvel</label>
+                             <AutocompleteInput
+                                id="type"
+                                name="type"
+                                value={formData.type}
+                                onChange={(value) => handleAutocompleteChange('type', value)}
+                                options={PROPERTY_TYPES}
+                                placeholder="Ex: Apartamento"
+                                required
+                                error={!!errors.type}
+                            />
                             {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
                         </div>
                         <div>
