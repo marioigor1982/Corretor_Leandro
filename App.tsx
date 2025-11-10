@@ -1103,7 +1103,7 @@ const AdminDashboard: React.FC<{
 
     return (
         <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
-            <header className="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-40">
+            <header className="bg-white dark:bg-[#1f2937] shadow-sm sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
                      <div className="flex items-center space-x-3">
                         <img src="https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg" alt="Logo" className="w-10 h-10 rounded-full"/>
@@ -1111,14 +1111,14 @@ const AdminDashboard: React.FC<{
                      </div>
                     <div className="flex items-center space-x-4">
                         <img src={user.picture} alt={user.name} title={user.email} className="w-9 h-9 rounded-full" />
-                        <a href="/#" className="text-sm text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 font-medium flex items-center space-x-2">
+                        <a href="/#" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium flex items-center space-x-2 transition-colors">
                            <i className="fa-solid fa-arrow-left"></i>
                            <span className="hidden sm:inline">Voltar ao Site</span>
                         </a>
-                         <button onClick={toggleTheme} className="text-sm text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" aria-label={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}>
+                         <button onClick={toggleTheme} className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium p-2 rounded-full hover:bg-gray-100 dark:hover:bg-transparent transition-colors" aria-label={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}>
                             {theme === 'light' ? <MoonIcon /> : <SunIcon />}
                         </button>
-                        <button onClick={onLogout} className="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400 font-medium flex items-center space-x-2">
+                        <button onClick={onLogout} className="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400 font-medium flex items-center space-x-2 transition-colors">
                            <LogoutIcon />
                            <span className="hidden sm:inline">Sair</span>
                         </button>
