@@ -1011,11 +1011,12 @@ const AdminDashboard: React.FC<{
             document.documentElement.classList.remove('dark');
         }
         localStorage.setItem('leandroCorretorTheme', theme);
-        
-        // Cleanup on component unmount
+
+        // When the dashboard is unmounted (e.g., logging out or going back to the site),
+        // we should remove the dark class to ensure the public site displays correctly.
         return () => {
             document.documentElement.classList.remove('dark');
-        }
+        };
     }, [theme]);
 
     const toggleTheme = () => {
@@ -1242,13 +1243,24 @@ const AdminDashboard: React.FC<{
                                             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
                                           </div>
                                         </div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
-                                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
-                                        <p className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
-                                    </div>
-                                     <div className="border-t dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-800/50 flex justify-end space-x-2">
-                                         <button onClick={() => handleEditClick(prop)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium py-1 px-3 rounded-md hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors" title="Editar"><i className="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
-                                         <button onClick={() => handleDeleteClick(prop.id)} className="text-sm text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 font-medium py-1 px-3 rounded-md hover:bg-red-50 dark:hover:bg-slate-700 transition-colors" title="Excluir"><i className="fa-solid fa-trash-can mr-1"></i>Excluir</button>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{`${prop.neighborhood}, ${prop.city}`}</p>
+                                        <p className="text-xl font-light text-green-600 my-2">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
+                                        <div className="flex-grow"></div>
+                                        <div className="flex justify-between text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 pt-3 mt-3 text-sm">
+                                            <div className="flex items-center space-x-2"><BedIcon /><span>{prop.bedrooms} Q</span></div>
+                                            <div className="flex items-center space-x-2"><BathIcon /><span>{prop.bathrooms} B</span></div>
+                                            <div className="flex items-center space-x-2"><AreaIcon /><span>{prop.area} m²</span></div>
+                                        </div>
+                                        <div className="mt-4 flex space-x-2">
+                                            <button onClick={() => handleEditClick(prop)} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center space-x-2 transition-colors">
+                                                <i className="fa-solid fa-pencil"></i>
+                                                <span>Editar</span>
+                                            </button>
+                                            <button onClick={() => handleDeleteClick(prop.id)} className="w-full bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center space-x-2 transition-colors">
+                                                <i className="fa-solid fa-trash"></i>
+                                                <span>Excluir</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -1256,8 +1268,8 @@ const AdminDashboard: React.FC<{
                     ) : (
                         <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-lg shadow-md">
                             <i className="fa-solid fa-house-circle-xmark text-5xl text-gray-400 dark:text-gray-500 mb-4"></i>
-                            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Nenhum imóvel encontrado</h3>
-                            <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar seus filtros ou cadastre um novo imóvel.</p>
+                            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Nenhum Imóvel Encontrado</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar os filtros ou cadastre um novo imóvel.</p>
                         </div>
                     )}
                 </main>
@@ -1266,123 +1278,92 @@ const AdminDashboard: React.FC<{
     );
 };
 
+// --- MAIN APP COMPONENT ---
 
-// --- ROUTER & MAIN APP ---
+const App = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<'public' | 'login' | 'dashboard'>('public');
 
-const App: React.FC = () => {
-    const [location, setLocation] = useState(window.location.hash);
-    const [allProperties, setAllProperties] = useState<Property[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [user, setUser] = useState<User | null>(null);
-    const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const fetchAndSetProperties = useCallback(async () => {
+    try {
+      const props = await getProperties();
+      setProperties(props);
+    } catch (e) {
+      console.error("Failed to fetch properties:", e);
+    }
+  }, []);
 
-    // Check for logged in user on mount
-    useEffect(() => {
-        // TODO: Firebase Integration - Replace localStorage with onAuthStateChanged
-        // This is the recommended way to get the current user.
-        // import { auth } from './services/firebase';
-        // import { onAuthStateChanged } from "firebase/auth";
-        // const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        //   if (firebaseUser) {
-        //     setUser({ name: firebaseUser.displayName!, email: firebaseUser.email!, picture: firebaseUser.photoURL! });
-        //   } else {
-        //     setUser(null);
-        //   }
-        //   setIsAuthLoading(false);
-        // });
-        // return () => unsubscribe();
+  useEffect(() => {
+    // Runs once on mount to initialize user from localStorage and fetch properties
+    const storedUser = localStorage.getItem('leandroCorretorUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    fetchAndSetProperties().finally(() => setLoading(false));
+  }, [fetchAndSetProperties]);
 
-        try {
-            const storedUser = localStorage.getItem('leandroCorretorUser');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            }
-        } catch (error) {
-            console.error("Failed to parse user from localStorage", error);
-            localStorage.removeItem('leandroCorretorUser');
-        }
-        setIsAuthLoading(false);
-    }, []);
-
-
-    const loadProperties = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const props = await getProperties();
-            setAllProperties(props);
-        } catch (error) {
-            console.error("Failed to load properties:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadProperties();
-    }, [loadProperties]);
-
-    useEffect(() => {
-        const handleHashChange = () => setLocation(window.location.hash);
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
-    const handleLogin = (loggedInUser: User) => {
-        setUser(loggedInUser);
-    };
-
-    const handleLogout = () => {
-        // TODO: Firebase Integration - Sign out from Firebase
-        // import { auth } from './services/firebase';
-        // import { signOut } from "firebase/auth";
-        // await signOut(auth);
-
-        if (window.google) {
-            window.google.accounts.id.disableAutoSelect();
-        }
-        localStorage.removeItem('leandroCorretorUser');
-        setUser(null);
-        window.location.hash = '#/'; // Redirect to home after logout
-    };
-
-    if (location.startsWith('#/dashboard')) {
-        // Login is temporarily bypassed to allow direct access to the dashboard.
-        // A mock user is created for the AdminDashboard component.
-        // To re-enable login, restore the original logic below.
-        const mockUser: User = {
-            name: "Leandro B. Colares",
-            email: "admin@leandrocorretor.com.br",
-            picture: "https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg"
-        };
-
-        return <AdminDashboard 
-            properties={allProperties}
-            user={mockUser}
-            onDataChange={loadProperties}
-            onLogout={handleLogout}
-        />;
-
-        /* --- Original Login Logic ---
-        if (isAuthLoading) {
-             return <LoadingSpinner />;
-        }
+  // This effect handles all routing logic based on URL hash and user login state.
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const hash = window.location.hash;
+      
+      if (hash.startsWith('#/dashboard')) {
         if (user) {
-            return <AdminDashboard 
-                properties={allProperties}
-                user={user}
-                onDataChange={loadProperties}
-                onLogout={handleLogout}
-            />;
+          setCurrentView('dashboard');
+        } else {
+          // User is not logged in, redirect to the login page.
+          window.location.hash = '#/login';
         }
-        return <LoginScreen onLoginSuccess={handleLogin} />;
-        */
-    }
+      } else if (hash.startsWith('#/login')) {
+        if (user) {
+          // User is already logged in, redirect to the dashboard.
+          window.location.hash = '#/dashboard';
+        } else {
+          setCurrentView('login');
+        }
+      } else {
+        // Any other hash routes to the public site.
+        setCurrentView('public');
+      }
+    };
     
-    if (isLoading && !location.startsWith('#/dashboard')) {
-        return <LoadingSpinner />;
-    }
+    window.addEventListener('hashchange', handleRouteChange);
+    handleRouteChange(); // Initial route check
 
-    return <PublicSite properties={allProperties} />;
+    return () => window.removeEventListener('hashchange', handleRouteChange);
+  }, [user]); // Re-run this effect when the user logs in or out.
+
+  const handleLoginSuccess = (loggedInUser: User) => {
+    // Update user state, which will trigger the routing useEffect
+    setUser(loggedInUser);
+    // Explicitly set hash to trigger navigation immediately
+    window.location.hash = '#/dashboard';
+  };
+  
+  const handleLogout = () => {
+    // Clear user state and local storage, then navigate to public site
+    localStorage.removeItem('leandroCorretorUser');
+    setUser(null);
+    window.location.hash = '/';
+  };
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // Render the correct view based on the current state, now managed reliably by the routing effect.
+  switch (currentView) {
+    case 'dashboard':
+      // The routing logic ensures user is available here. We add a conditional for robustness.
+      return user ? <AdminDashboard properties={properties} user={user} onDataChange={fetchAndSetProperties} onLogout={handleLogout} /> : <LoadingSpinner />;
+    case 'login':
+      return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    case 'public':
+    default:
+      return <PublicSite properties={properties} />;
+  }
 };
 
 export default App;
