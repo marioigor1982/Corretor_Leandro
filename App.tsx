@@ -1,4 +1,5 @@
 
+
 // Fix: Add global declaration for window.google to fix TypeScript errors.
 declare global {
   interface Window {
@@ -1074,6 +1075,23 @@ const App: React.FC = () => {
     };
 
     if (location.startsWith('#/dashboard')) {
+        // Login is temporarily bypassed to allow direct access to the dashboard.
+        // A mock user is created for the AdminDashboard component.
+        // To re-enable login, restore the original logic below.
+        const mockUser: User = {
+            name: "Leandro B. Colares",
+            email: "admin@leandrocorretor.com.br",
+            picture: "https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg"
+        };
+
+        return <AdminDashboard 
+            properties={allProperties}
+            user={mockUser}
+            onDataChange={loadProperties}
+            onLogout={handleLogout}
+        />;
+
+        /* --- Original Login Logic ---
         if (isAuthLoading) {
              return <LoadingSpinner />;
         }
@@ -1086,6 +1104,7 @@ const App: React.FC = () => {
             />;
         }
         return <LoginScreen onLoginSuccess={handleLogin} />;
+        */
     }
     
     if (isLoading && !location.startsWith('#/dashboard')) {
