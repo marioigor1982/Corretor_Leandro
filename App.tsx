@@ -1,3 +1,4 @@
+
 // Fix: Add global declaration for window.google to fix TypeScript errors.
 declare global {
   interface Window {
@@ -7,7 +8,7 @@ declare global {
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Property, User } from './types';
-import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon, LogoutIcon, HomeIcon } from './components/icons';
+import { LoadingSpinner, BedIcon, BathIcon, AreaIcon, UserIcon, MapPinIcon, StarIcon, LogoutIcon, HomeIcon, SunIcon, MoonIcon } from './components/icons';
 import { getProperties, addProperty, updateProperty, deleteProperty } from './services/propertyService';
 
 // --- LOGIN COMPONENT ---
@@ -974,6 +975,32 @@ const AdminDashboard: React.FC<{
     const [minBedrooms, setMinBedrooms] = useState<string>('');
     const [maxBedrooms, setMaxBedrooms] = useState<string>('');
 
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        const savedTheme = localStorage.getItem('leandroCorretorTheme') as 'light' | 'dark' | null;
+        if (savedTheme) return savedTheme;
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+        return 'light';
+    });
+
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('leandroCorretorTheme', theme);
+        
+        // Cleanup on component unmount
+        return () => {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
+
+
     const handleAddClick = () => {
         if (properties.length >= 100) {
             alert("Limite de 100 imóveis atingido. Exclua um imóvel para adicionar outro.");
@@ -1063,20 +1090,23 @@ const AdminDashboard: React.FC<{
     }
 
     return (
-        <div className="bg-gray-100 min-h-screen">
-            <header className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
+            <header className="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
                      <div className="flex items-center space-x-3">
                         <img src="https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg" alt="Logo" className="w-10 h-10 rounded-full"/>
-                        <h1 className="text-xl font-bold text-gray-800">Dashboard de Imóveis</h1>
+                        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">Dashboard de Imóveis</h1>
                      </div>
                     <div className="flex items-center space-x-4">
                         <img src={user.picture} alt={user.name} title={user.email} className="w-9 h-9 rounded-full" />
-                        <a href="/#" className="text-sm text-gray-600 hover:text-indigo-600 font-medium flex items-center space-x-2">
+                        <a href="/#" className="text-sm text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 font-medium flex items-center space-x-2">
                            <i className="fa-solid fa-arrow-left"></i>
                            <span className="hidden sm:inline">Voltar ao Site</span>
                         </a>
-                        <button onClick={onLogout} className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center space-x-2">
+                         <button onClick={toggleTheme} className="text-sm text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" aria-label={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}>
+                            {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+                        </button>
+                        <button onClick={onLogout} className="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400 font-medium flex items-center space-x-2">
                            <LogoutIcon />
                            <span className="hidden sm:inline">Sair</span>
                         </button>
@@ -1087,37 +1117,37 @@ const AdminDashboard: React.FC<{
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Total de Imóveis</p>
-                            <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Imóveis</p>
+                            <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.total}</p>
                         </div>
                          <div className="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center">
                             <i className="fa-solid fa-building"></i>
                         </div>
                     </div>
-                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                     <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Imóveis à Venda</p>
-                            <p className="text-3xl font-bold text-gray-800">{stats.venda}</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Imóveis à Venda</p>
+                            <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.venda}</p>
                         </div>
                          <div className="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center">
                             <i className="fa-solid fa-tags"></i>
                         </div>
                     </div>
-                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                     <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Imóveis para Aluguel</p>
-                            <p className="text-3xl font-bold text-gray-800">{stats.aluguel}</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Imóveis para Aluguel</p>
+                            <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.aluguel}</p>
                         </div>
                          <div className="bg-orange-100 text-orange-600 rounded-full h-12 w-12 flex items-center justify-center">
                             <i className="fa-solid fa-key"></i>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Valor Total em Vendas</p>
-                            <p className="text-2xl xl:text-3xl font-bold text-gray-800">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSalesValue)}</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Valor Total em Vendas</p>
+                            <p className="text-2xl xl:text-3xl font-bold text-gray-800 dark:text-gray-100">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSalesValue)}</p>
                         </div>
                          <div className="bg-purple-100 text-purple-600 rounded-full h-12 w-12 flex items-center justify-center">
                             <i className="fa-solid fa-sack-dollar"></i>
@@ -1126,18 +1156,18 @@ const AdminDashboard: React.FC<{
                 </div>
                 
                 {/* Filters and Actions */}
-                <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center">
                         <div className="relative col-span-1 sm:col-span-2 md:col-span-1">
                             <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" placeholder="Buscar por título, local..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <input type="text" placeholder="Buscar por título, local..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
                         </div>
-                        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="all">Todas as Categorias</option>
                             <option value="venda">Venda</option>
                             <option value="aluguel">Aluguel</option>
                         </select>
-                        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="">Todos os Tipos</option>
                             {propertyTypes.map(type => <option key={type} value={type}>{type}</option>)}
                         </select>
@@ -1146,10 +1176,10 @@ const AdminDashboard: React.FC<{
                             <span>Cadastrar Imóvel</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border-t border-gray-200 mt-4 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border-t border-gray-200 dark:border-slate-700 mt-4 pt-4">
                         <div>
-                            <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700">Faixa de Preço</label>
-                            <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Faixa de Preço</label>
+                            <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="all">Todas</option>
                                 <option value="0-100000">Até R$100.000</option>
                                 <option value="100001-300000">R$100.001 - R$300.000</option>
@@ -1157,19 +1187,19 @@ const AdminDashboard: React.FC<{
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="cityFilter" className="block text-sm font-medium text-gray-700">Cidade</label>
-                            <select id="cityFilter" value={filterCity} onChange={e => setFilterCity(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label htmlFor="cityFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cidade</label>
+                            <select id="cityFilter" value={filterCity} onChange={e => setFilterCity(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="">Todas as Cidades</option>
                                 {propertyCities.map(city => <option key={city} value={city}>{city}</option>)}
                             </select>
                         </div>
                         <div>
-                           <label htmlFor="minBedroomsFilter" className="block text-sm font-medium text-gray-700">Quartos (Mín)</label>
-                           <input type="number" id="minBedroomsFilter" placeholder="Ex: 1" min="0" value={minBedrooms} onChange={e => setMinBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                           <label htmlFor="minBedroomsFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quartos (Mín)</label>
+                           <input type="number" id="minBedroomsFilter" placeholder="Ex: 1" min="0" value={minBedrooms} onChange={e => setMinBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
                         </div>
                         <div>
-                            <label htmlFor="maxBedroomsFilter" className="block text-sm font-medium text-gray-700">Quartos (Máx)</label>
-                            <input type="number" id="maxBedroomsFilter" placeholder="Ex: 3" min="0" value={maxBedrooms} onChange={e => setMaxBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            <label htmlFor="maxBedroomsFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quartos (Máx)</label>
+                            <input type="number" id="maxBedroomsFilter" placeholder="Ex: 3" min="0" value={maxBedrooms} onChange={e => setMaxBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
                         </div>
                     </div>
                 </div>
@@ -1178,11 +1208,11 @@ const AdminDashboard: React.FC<{
                 {filteredProperties.length > 0 ? (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredProperties.map(prop => (
-                            <div key={prop.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col animate-fade-in">
+                            <div key={prop.id} className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden flex flex-col animate-fade-in">
                                 <img src={prop.imageUrls[prop.mainImageIndex] || ''} alt={prop.title} className="w-full h-48 object-cover"/>
                                 <div className="p-4 flex flex-col flex-grow">
                                     <div className="flex justify-between items-start">
-                                      <h3 className="text-lg font-bold text-gray-800 truncate pr-2">{prop.title}</h3>
+                                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate pr-2">{prop.title}</h3>
                                       <div className="flex items-center space-x-2 flex-shrink-0">
                                         {prop.isFeatured && (
                                             <div title="Em destaque" className="text-yellow-500">
@@ -1192,22 +1222,22 @@ const AdminDashboard: React.FC<{
                                         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
                                       </div>
                                     </div>
-                                    <p className="text-sm text-gray-500 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
-                                    <p className="text-gray-600 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
-                                    <p className="text-xl font-semibold text-gray-900 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
+                                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
+                                    <p className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
                                 </div>
-                                 <div className="border-t p-3 bg-gray-50 flex justify-end space-x-2">
-                                     <button onClick={() => handleEditClick(prop)} className="text-sm text-blue-600 hover:text-blue-800 font-medium py-1 px-3 rounded-md hover:bg-blue-50 transition-colors" title="Editar"><i className="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
-                                     <button onClick={() => handleDeleteClick(prop.id)} className="text-sm text-red-600 hover:text-red-800 font-medium py-1 px-3 rounded-md hover:bg-red-50 transition-colors" title="Excluir"><i className="fa-solid fa-trash-can mr-1"></i>Excluir</button>
+                                 <div className="border-t dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-800/50 flex justify-end space-x-2">
+                                     <button onClick={() => handleEditClick(prop)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium py-1 px-3 rounded-md hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors" title="Editar"><i className="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
+                                     <button onClick={() => handleDeleteClick(prop.id)} className="text-sm text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 font-medium py-1 px-3 rounded-md hover:bg-red-50 dark:hover:bg-slate-700 transition-colors" title="Excluir"><i className="fa-solid fa-trash-can mr-1"></i>Excluir</button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-16 bg-white rounded-lg shadow-md">
-                        <i className="fa-solid fa-house-circle-xmark text-5xl text-gray-400 mb-4"></i>
-                        <h3 className="text-xl font-semibold text-gray-800">Nenhum imóvel encontrado</h3>
-                        <p className="text-gray-500 mt-2">Tente ajustar seus filtros ou cadastre um novo imóvel.</p>
+                    <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-lg shadow-md">
+                        <i className="fa-solid fa-house-circle-xmark text-5xl text-gray-400 dark:text-gray-500 mb-4"></i>
+                        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Nenhum imóvel encontrado</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar seus filtros ou cadastre um novo imóvel.</p>
                     </div>
                 )}
             </main>
