@@ -1,4 +1,3 @@
-
 // Fix: Add global declaration for window.google to fix TypeScript errors.
 declare global {
   interface Window {
@@ -602,7 +601,8 @@ const AutocompleteInput: React.FC<{
     name: string;
     required?: boolean;
     error?: boolean;
-}> = ({ value, onChange, options, placeholder, id, name, required, error }) => {
+    theme: 'light' | 'dark';
+}> = ({ value, onChange, options, placeholder, id, name, required, error, theme }) => {
     const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isListVisible, setIsListVisible] = useState(false);
@@ -653,6 +653,15 @@ const AutocompleteInput: React.FC<{
         setIsListVisible(false);
     };
 
+    const lightThemeClasses = "bg-white border-gray-300 text-gray-900 placeholder-gray-400";
+    const darkThemeClasses = "bg-slate-700 border-slate-600 text-white placeholder-gray-400";
+    
+    const lightThemeDropdownClasses = "bg-white border-gray-300";
+    const darkThemeDropdownClasses = "bg-slate-700 border-slate-600";
+    
+    const lightThemeItemClasses = "text-gray-900 hover:bg-gray-100";
+    const darkThemeItemClasses = "text-white hover:bg-slate-600";
+
     return (
         <div className="relative" ref={wrapperRef}>
             <input
@@ -665,22 +674,22 @@ const AutocompleteInput: React.FC<{
                 placeholder={placeholder}
                 required={required}
                 autoComplete="off"
-                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}
+                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${theme === 'dark' ? darkThemeClasses : lightThemeClasses} ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}
             />
             {isListVisible && (
-                <ul className="absolute z-10 w-full bg-slate-700 border border-slate-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg scrollbar-hide">
+                <ul className={`absolute z-10 w-full border rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg scrollbar-hide ${theme === 'dark' ? darkThemeDropdownClasses : lightThemeDropdownClasses}`}>
                     {suggestions.length > 0 ? (
                         suggestions.map((suggestion, index) => (
                             <li
                                 key={index}
                                 onMouseDown={(e) => { e.preventDefault(); onSuggestionClick(suggestion); }}
-                                className="px-4 py-2 cursor-pointer text-white hover:bg-slate-600"
+                                className={`px-4 py-2 cursor-pointer ${theme === 'dark' ? darkThemeItemClasses : lightThemeItemClasses}`}
                             >
                                 {suggestion}
                             </li>
                         ))
                     ) : (
-                         <li className="px-4 py-2 text-gray-400">Nenhuma opção encontrada</li>
+                         <li className={`px-4 py-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Nenhuma opção encontrada</li>
                     )}
                 </ul>
             )}
@@ -692,7 +701,8 @@ const PropertyForm: React.FC<{
   onSubmit: (property: Omit<Property, 'id'>) => void;
   onCancel: () => void;
   initialData?: Property | null;
-}> = ({ onSubmit, onCancel, initialData }) => {
+  theme: 'light' | 'dark';
+}> = ({ onSubmit, onCancel, initialData, theme }) => {
     const [formData, setFormData] = useState({
         title: '', description: '', type: '', category: 'venda' as 'venda' | 'aluguel',
         price: 0, neighborhood: '', city: '', bedrooms: 0, bathrooms: 0, area: 0,
@@ -716,6 +726,17 @@ const PropertyForm: React.FC<{
             setMainImageIndex(initialData.mainImageIndex);
         }
     }, [initialData]);
+    
+    const baseInputClasses = "mt-1 block w-full rounded-md shadow-sm sm:text-sm focus:border-indigo-500 focus:ring-indigo-500";
+    const lightThemeInputClasses = "bg-white border-gray-300 text-gray-900 placeholder-gray-400";
+    const darkThemeInputClasses = "bg-slate-700 border-slate-600 text-white placeholder-gray-400";
+    const errorClasses = "border-red-500 focus:border-red-500 focus:ring-red-500";
+    
+    const getInputClass = (fieldName: keyof typeof errors) => {
+        const themeClasses = theme === 'dark' ? darkThemeInputClasses : lightThemeInputClasses;
+        const validationClasses = errors[fieldName] ? errorClasses : '';
+        return `${baseInputClasses} ${themeClasses} ${validationClasses}`;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -805,45 +826,45 @@ const PropertyForm: React.FC<{
     };
 
     return (
-        <div className="bg-gray-900 min-h-screen p-4 sm:p-6 md:p-8">
-            <div className="max-w-4xl mx-auto bg-slate-800 rounded-lg shadow-xl p-6 md:p-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">{initialData ? 'Editar Imóvel' : 'Cadastrar Novo Imóvel'}</h2>
+        <div className={`p-4 sm:p-6 md:p-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
+            <div className={`max-w-4xl mx-auto rounded-lg shadow-xl p-6 md:p-8 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'}`}>
+                <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{initialData ? 'Editar Imóvel' : 'Cadastrar Novo Imóvel'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Basic Info */}
                     <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-300">Título</label>
-                        <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                        <label htmlFor="title" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Título</label>
+                        <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className={getInputClass('title')}/>
                         {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-300">Bairro</label>
-                            <input type="text" name="neighborhood" id="neighborhood" value={formData.neighborhood} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.neighborhood ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <label htmlFor="neighborhood" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Bairro</label>
+                            <input type="text" name="neighborhood" id="neighborhood" value={formData.neighborhood} onChange={handleChange} required className={getInputClass('neighborhood')}/>
                             {errors.neighborhood && <p className="mt-1 text-xs text-red-600">{errors.neighborhood}</p>}
                         </div>
                         <div>
-                            <label htmlFor="city" className="block text-sm font-medium text-gray-300">Cidade</label>
-                            <input type="text" name="city" id="city" value={formData.city} onChange={handleChange} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.city ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <label htmlFor="city" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Cidade</label>
+                            <input type="text" name="city" id="city" value={formData.city} onChange={handleChange} required className={getInputClass('city')}/>
                             {errors.city && <p className="mt-1 text-xs text-red-600">{errors.city}</p>}
                         </div>
                     </div>
 
                     <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-300">Descrição</label>
-                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.description ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}></textarea>
+                        <label htmlFor="description" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Descrição</label>
+                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className={getInputClass('description')}></textarea>
                         {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
                     </div>
 
                     {/* Details */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div>
-                            <label htmlFor="price" className="block text-sm font-medium text-gray-300">Valor (R$)</label>
-                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="1" step="any" placeholder="Ex: 250000" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.price ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <label htmlFor="price" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Valor (R$)</label>
+                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="1" step="any" placeholder="Ex: 250000" className={getInputClass('price')}/>
                             {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
                         </div>
                         <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-300">Tipo de Imóvel</label>
+                            <label htmlFor="type" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Tipo de Imóvel</label>
                              <AutocompleteInput
                                 id="type"
                                 name="type"
@@ -853,29 +874,30 @@ const PropertyForm: React.FC<{
                                 placeholder="Ex: Apartamento"
                                 required
                                 error={!!errors.type}
+                                theme={theme}
                             />
                             {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
                         </div>
                         <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-gray-300">Categoria</label>
-                            <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full rounded-md border-slate-600 bg-slate-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label htmlFor="category" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Categoria</label>
+                            <select name="category" id="category" value={formData.category} onChange={handleChange} required className={`${baseInputClasses} ${theme === 'dark' ? darkThemeInputClasses : lightThemeInputClasses}`}>
                                 <option value="venda">Venda</option>
                                 <option value="aluguel">Aluguel</option>
                             </select>
                         </div>
                         <div>
-                             <label htmlFor="area" className="block text-sm font-medium text-gray-300">Área (m²)</label>
-                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required min="1" placeholder="Ex: 50" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.area ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                             <label htmlFor="area" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Área (m²)</label>
+                            <input type="number" name="area" id="area" value={formData.area} onChange={handleChange} required min="1" placeholder="Ex: 50" className={getInputClass('area')}/>
                             {errors.area && <p className="mt-1 text-xs text-red-600">{errors.area}</p>}
                         </div>
                          <div>
-                            <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-300">Quartos</label>
-                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required min="0" step="1" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.bedrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <label htmlFor="bedrooms" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Quartos</label>
+                            <input type="number" name="bedrooms" id="bedrooms" value={formData.bedrooms} onChange={handleChange} required min="0" step="1" className={getInputClass('bedrooms')}/>
                              {errors.bedrooms && <p className="mt-1 text-xs text-red-600">{errors.bedrooms}</p>}
                         </div>
                         <div>
-                            <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-300">Banheiros</label>
-                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required min="0" step="1" className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-slate-700 border-slate-600 text-white placeholder-gray-400 ${errors.bathrooms ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-indigo-500 focus:ring-indigo-500'}`}/>
+                            <label htmlFor="bathrooms" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Banheiros</label>
+                            <input type="number" name="bathrooms" id="bathrooms" value={formData.bathrooms} onChange={handleChange} required min="0" step="1" className={getInputClass('bathrooms')}/>
                              {errors.bathrooms && <p className="mt-1 text-xs text-red-600">{errors.bathrooms}</p>}
                         </div>
                     </div>
@@ -894,26 +916,26 @@ const PropertyForm: React.FC<{
                                 />
                             </div>
                             <div className="ml-3 text-sm">
-                                <label htmlFor="isFeatured" className="font-medium text-gray-300">Marcar como Destaque</label>
-                                <p className="text-gray-400">Imóveis em destaque aparecem na página inicial.</p>
+                                <label htmlFor="isFeatured" className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Marcar como Destaque</label>
+                                <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Imóveis em destaque aparecem na página inicial.</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Image Upload */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300">Fotos (até 10)</label>
-                        <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${errors.images ? 'border-red-500' : 'border-gray-600'}`}>
+                        <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Fotos (até 10)</label>
+                        <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${errors.images ? 'border-red-500' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-300')}`}>
                             <div className="space-y-1 text-center">
-                                <i className="fa-solid fa-image text-4xl text-gray-400 mx-auto"></i>
-                                <div className="flex text-sm text-gray-400">
-                                    <label htmlFor="file-upload" className="relative cursor-pointer bg-slate-800 rounded-md font-medium text-indigo-400 hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                <i className={`fa-solid fa-image text-4xl mx-auto ${theme === 'dark' ? 'text-gray-400' : 'text-gray-300'}`}></i>
+                                <div className={`flex text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    <label htmlFor="file-upload" className={`relative cursor-pointer rounded-md font-medium focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 ${theme === 'dark' ? 'bg-slate-800 text-indigo-400 hover:text-indigo-300' : 'bg-white text-indigo-600 hover:text-indigo-500'}`}>
                                         <span>Carregar arquivos</span>
                                         <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple accept="image/*" onChange={handleImageUpload} disabled={imageUrls.length >= 10}/>
                                     </label>
                                     <p className="pl-1">ou arraste e solte</p>
                                 </div>
-                                <p className="text-xs text-gray-400">{10 - imageUrls.length} restantes</p>
+                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{10 - imageUrls.length} restantes</p>
                             </div>
                         </div>
                          {errors.images && <p className="mt-1 text-xs text-red-600">{errors.images}</p>}
@@ -922,7 +944,7 @@ const PropertyForm: React.FC<{
                     {isUploading && <LoadingSpinner />}
                     {imageUrls.length > 0 && (
                         <div>
-                            <h4 className="text-sm font-medium text-gray-300 mb-2">Imagens Carregadas:</h4>
+                            <h4 className={`text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Imagens Carregadas:</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                                 {imageUrls.map((url, index) => (
                                     <div key={index} className={`relative group rounded-lg overflow-hidden border-2 ${index === mainImageIndex ? 'border-indigo-500' : 'border-transparent'}`}>
@@ -945,7 +967,7 @@ const PropertyForm: React.FC<{
 
                     {/* Actions */}
                     <div className="pt-5 flex flex-col sm:flex-row sm:justify-end sm:space-x-3 gap-3 sm:gap-0">
-                        <button type="button" onClick={onCancel} className="bg-slate-600 py-2 px-4 border border-slate-500 rounded-md shadow-sm text-sm font-medium text-gray-200 hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <button type="button" onClick={onCancel} className={`py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${theme === 'dark' ? 'bg-slate-600 hover:bg-slate-500 text-gray-200 border-slate-500' : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'}`}>
                             Cancelar
                         </button>
                         <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -1079,16 +1101,6 @@ const AdminDashboard: React.FC<{
             .reduce((sum, property) => sum + property.price, 0)
     };
 
-    if (view === 'add' || view === 'edit') {
-        return (
-            <PropertyForm
-                onSubmit={handleFormSubmit}
-                onCancel={() => { setView('list'); setEditingProperty(null); }}
-                initialData={editingProperty}
-            />
-        );
-    }
-
     return (
         <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
             <header className="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-40">
@@ -1113,134 +1125,143 @@ const AdminDashboard: React.FC<{
                     </div>
                 </div>
             </header>
-            
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Imóveis</p>
-                            <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.total}</p>
-                        </div>
-                         <div className="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center">
-                            <i className="fa-solid fa-building"></i>
-                        </div>
-                    </div>
-                     <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Imóveis à Venda</p>
-                            <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.venda}</p>
-                        </div>
-                         <div className="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center">
-                            <i className="fa-solid fa-tags"></i>
-                        </div>
-                    </div>
-                     <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Imóveis para Aluguel</p>
-                            <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.aluguel}</p>
-                        </div>
-                         <div className="bg-orange-100 text-orange-600 rounded-full h-12 w-12 flex items-center justify-center">
-                            <i className="fa-solid fa-key"></i>
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Valor Total em Vendas</p>
-                            <p className="text-2xl xl:text-3xl font-bold text-gray-800 dark:text-gray-100">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSalesValue)}</p>
-                        </div>
-                         <div className="bg-purple-100 text-purple-600 rounded-full h-12 w-12 flex items-center justify-center">
-                            <i className="fa-solid fa-sack-dollar"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Filters and Actions */}
-                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md mb-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                        <div className="relative col-span-1 sm:col-span-2 md:col-span-1">
-                            <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" placeholder="Buscar por título, local..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
-                        </div>
-                        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="all">Todas as Categorias</option>
-                            <option value="venda">Venda</option>
-                            <option value="aluguel">Aluguel</option>
-                        </select>
-                        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">Todos os Tipos</option>
-                            {propertyTypes.map(type => <option key={type} value={type}>{type}</option>)}
-                        </select>
-                        <button onClick={handleAddClick} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center space-x-2 transition-colors">
-                            <i className="fa-solid fa-plus"></i>
-                            <span>Cadastrar Imóvel</span>
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border-t border-gray-200 dark:border-slate-700 mt-4 pt-4">
-                        <div>
-                            <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Faixa de Preço</label>
-                            <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="all">Todas</option>
-                                <option value="0-100000">Até R$100.000</option>
-                                <option value="100001-300000">R$100.001 - R$300.000</option>
-                                <option value="300001-">Acima de R$300.000</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="cityFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cidade</label>
-                            <select id="cityFilter" value={filterCity} onChange={e => setFilterCity(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="">Todas as Cidades</option>
-                                {propertyCities.map(city => <option key={city} value={city}>{city}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                           <label htmlFor="minBedroomsFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quartos (Mín)</label>
-                           <input type="number" id="minBedroomsFilter" placeholder="Ex: 1" min="0" value={minBedrooms} onChange={e => setMinBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
-                        </div>
-                        <div>
-                            <label htmlFor="maxBedroomsFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quartos (Máx)</label>
-                            <input type="number" id="maxBedroomsFilter" placeholder="Ex: 3" min="0" value={maxBedrooms} onChange={e => setMaxBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Property List */}
-                {filteredProperties.length > 0 ? (
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredProperties.map(prop => (
-                            <div key={prop.id} className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden flex flex-col animate-fade-in">
-                                <img src={prop.imageUrls[prop.mainImageIndex] || ''} alt={prop.title} className="w-full h-48 object-cover"/>
-                                <div className="p-4 flex flex-col flex-grow">
-                                    <div className="flex justify-between items-start">
-                                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate pr-2">{prop.title}</h3>
-                                      <div className="flex items-center space-x-2 flex-shrink-0">
-                                        {prop.isFeatured && (
-                                            <div title="Em destaque" className="text-yellow-500">
-                                                <i className="fa-solid fa-star"></i>
-                                            </div>
-                                        )}
-                                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
-                                      </div>
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
-                                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
-                                    <p className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
-                                </div>
-                                 <div className="border-t dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-800/50 flex justify-end space-x-2">
-                                     <button onClick={() => handleEditClick(prop)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium py-1 px-3 rounded-md hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors" title="Editar"><i className="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
-                                     <button onClick={() => handleDeleteClick(prop.id)} className="text-sm text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 font-medium py-1 px-3 rounded-md hover:bg-red-50 dark:hover:bg-slate-700 transition-colors" title="Excluir"><i className="fa-solid fa-trash-can mr-1"></i>Excluir</button>
-                                </div>
+            {view === 'add' || view === 'edit' ? (
+                 <PropertyForm
+                    onSubmit={handleFormSubmit}
+                    onCancel={() => { setView('list'); setEditingProperty(null); }}
+                    initialData={editingProperty}
+                    theme={theme}
+                />
+            ) : (
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {/* Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Imóveis</p>
+                                <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.total}</p>
                             </div>
-                        ))}
+                             <div className="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center">
+                                <i className="fa-solid fa-building"></i>
+                            </div>
+                        </div>
+                         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Imóveis à Venda</p>
+                                <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.venda}</p>
+                            </div>
+                             <div className="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center">
+                                <i className="fa-solid fa-tags"></i>
+                            </div>
+                        </div>
+                         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Imóveis para Aluguel</p>
+                                <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stats.aluguel}</p>
+                            </div>
+                             <div className="bg-orange-100 text-orange-600 rounded-full h-12 w-12 flex items-center justify-center">
+                                <i className="fa-solid fa-key"></i>
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Valor Total em Vendas</p>
+                                <p className="text-2xl xl:text-3xl font-bold text-gray-800 dark:text-gray-100">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSalesValue)}</p>
+                            </div>
+                             <div className="bg-purple-100 text-purple-600 rounded-full h-12 w-12 flex items-center justify-center">
+                                <i className="fa-solid fa-sack-dollar"></i>
+                            </div>
+                        </div>
                     </div>
-                ) : (
-                    <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-lg shadow-md">
-                        <i className="fa-solid fa-house-circle-xmark text-5xl text-gray-400 dark:text-gray-500 mb-4"></i>
-                        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Nenhum imóvel encontrado</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar seus filtros ou cadastre um novo imóvel.</p>
+                    
+                    {/* Filters and Actions */}
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                            <div className="relative col-span-1 sm:col-span-2 md:col-span-1">
+                                <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" placeholder="Buscar por título, local..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            </div>
+                            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="all">Todas as Categorias</option>
+                                <option value="venda">Venda</option>
+                                <option value="aluguel">Aluguel</option>
+                            </select>
+                            <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="">Todos os Tipos</option>
+                                {propertyTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                            </select>
+                            <button onClick={handleAddClick} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md flex items-center justify-center space-x-2 transition-colors">
+                                <i className="fa-solid fa-plus"></i>
+                                <span>Cadastrar Imóvel</span>
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border-t border-gray-200 dark:border-slate-700 mt-4 pt-4">
+                            <div>
+                                <label htmlFor="priceRangeFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Faixa de Preço</label>
+                                <select id="priceRangeFilter" value={priceRange} onChange={e => setPriceRange(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="all">Todas</option>
+                                    <option value="0-100000">Até R$100.000</option>
+                                    <option value="100001-300000">R$100.001 - R$300.000</option>
+                                    <option value="300001-">Acima de R$300.000</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="cityFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cidade</label>
+                                <select id="cityFilter" value={filterCity} onChange={e => setFilterCity(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Todas as Cidades</option>
+                                    {propertyCities.map(city => <option key={city} value={city}>{city}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                               <label htmlFor="minBedroomsFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quartos (Mín)</label>
+                               <input type="number" id="minBedroomsFilter" placeholder="Ex: 1" min="0" value={minBedrooms} onChange={e => setMinBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            </div>
+                            <div>
+                                <label htmlFor="maxBedroomsFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quartos (Máx)</label>
+                                <input type="number" id="maxBedroomsFilter" placeholder="Ex: 3" min="0" value={maxBedrooms} onChange={e => setMaxBedrooms(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"/>
+                            </div>
+                        </div>
                     </div>
-                )}
-            </main>
+    
+                    {/* Property List */}
+                    {filteredProperties.length > 0 ? (
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredProperties.map(prop => (
+                                <div key={prop.id} className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden flex flex-col animate-fade-in">
+                                    <img src={prop.imageUrls[prop.mainImageIndex] || ''} alt={prop.title} className="w-full h-48 object-cover"/>
+                                    <div className="p-4 flex flex-col flex-grow">
+                                        <div className="flex justify-between items-start">
+                                          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate pr-2">{prop.title}</h3>
+                                          <div className="flex items-center space-x-2 flex-shrink-0">
+                                            {prop.isFeatured && (
+                                                <div title="Em destaque" className="text-yellow-500">
+                                                    <i className="fa-solid fa-star"></i>
+                                                </div>
+                                            )}
+                                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${prop.category === 'venda' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{prop.category}</span>
+                                          </div>
+                                        </div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{prop.type} • {prop.neighborhood}, {prop.city}</p>
+                                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 flex-grow">{prop.description.substring(0, 80)}{prop.description.length > 80 ? '...' : ''}</p>
+                                        <p className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-3">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prop.price)}</p>
+                                    </div>
+                                     <div className="border-t dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-800/50 flex justify-end space-x-2">
+                                         <button onClick={() => handleEditClick(prop)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium py-1 px-3 rounded-md hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors" title="Editar"><i className="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
+                                         <button onClick={() => handleDeleteClick(prop.id)} className="text-sm text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 font-medium py-1 px-3 rounded-md hover:bg-red-50 dark:hover:bg-slate-700 transition-colors" title="Excluir"><i className="fa-solid fa-trash-can mr-1"></i>Excluir</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-lg shadow-md">
+                            <i className="fa-solid fa-house-circle-xmark text-5xl text-gray-400 dark:text-gray-500 mb-4"></i>
+                            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Nenhum imóvel encontrado</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar seus filtros ou cadastre um novo imóvel.</p>
+                        </div>
+                    )}
+                </main>
+            )}
         </div>
     );
 };
