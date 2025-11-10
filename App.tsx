@@ -1,4 +1,3 @@
-
 // Fix: Add global declaration for window.google to fix TypeScript errors.
 declare global {
   interface Window {
@@ -497,29 +496,28 @@ const PROPERTY_TYPES = [
 ];
 
 const AutocompleteInput: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
-  placeholder?: string;
-  id: string;
-  name: string;
-  required?: boolean;
-  error?: boolean;
+    value: string;
+    onChange: (value: string) => void;
+    options: string[];
+    placeholder?: string;
+    id: string;
+    name: string;
+    required?: boolean;
+    error?: boolean;
 }> = ({ value, onChange, options, placeholder, id, name, required, error }) => {
     const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState<string[]>([]);
-    const [isFocused, setIsFocused] = useState(false);
+    const [isListVisible, setIsListVisible] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setInputValue(value);
     }, [value]);
-    
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setIsFocused(false);
-                setSuggestions([]);
+                setIsListVisible(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -527,26 +525,34 @@ const AutocompleteInput: React.FC<{
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [wrapperRef]);
+    
+    const filterAndSetSuggestions = (text: string) => {
+        const filtered = options.filter(option =>
+            option.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+        );
+        setSuggestions(filtered);
+    };
+
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const text = e.target.value;
         setInputValue(text);
-        onChange(text); // Update parent form state immediately
-        if (text.length > 0) {
-            const filteredSuggestions = options.filter(option =>
-                option.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
-            );
-            setSuggestions(filteredSuggestions);
-        } else {
-            setSuggestions([]);
+        onChange(text);
+        filterAndSetSuggestions(text);
+        if (!isListVisible) {
+            setIsListVisible(true);
         }
+    };
+    
+    const handleFocus = () => {
+        setIsListVisible(true);
+        filterAndSetSuggestions(inputValue); // Filter based on current value, shows all if empty
     };
 
     const onSuggestionClick = (suggestion: string) => {
         setInputValue(suggestion);
         onChange(suggestion);
-        setSuggestions([]);
-        setIsFocused(false);
+        setIsListVisible(false);
     };
 
     return (
@@ -557,23 +563,27 @@ const AutocompleteInput: React.FC<{
                 name={name}
                 value={inputValue}
                 onChange={handleInputChange}
-                onFocus={() => setIsFocused(true)}
+                onFocus={handleFocus}
                 placeholder={placeholder}
                 required={required}
                 autoComplete="off"
                 className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'}`}
             />
-            {(isFocused && inputValue.length > 0 && suggestions.length > 0) && (
-                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
-                    {suggestions.map((suggestion, index) => (
-                        <li
-                            key={index}
-                            onClick={() => onSuggestionClick(suggestion)}
-                            className="px-4 py-2 cursor-pointer hover:bg-indigo-100"
-                        >
-                            {suggestion}
-                        </li>
-                    ))}
+            {isListVisible && (
+                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg scrollbar-hide">
+                    {suggestions.length > 0 ? (
+                        suggestions.map((suggestion, index) => (
+                            <li
+                                key={index}
+                                onMouseDown={(e) => { e.preventDefault(); onSuggestionClick(suggestion); }}
+                                className="px-4 py-2 cursor-pointer hover:bg-indigo-100"
+                            >
+                                {suggestion}
+                            </li>
+                        ))
+                    ) : (
+                         <li className="px-4 py-2 text-gray-500">Nenhuma opção encontrada</li>
+                    )}
                 </ul>
             )}
         </div>
