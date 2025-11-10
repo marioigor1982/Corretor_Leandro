@@ -98,8 +98,100 @@ const backgroundImages = [
   'https://i.postimg.cc/66CFj4V2/f16ad66f-5aa9-4348-b63f-6a9127bee08d.jpg'
 ];
 
-const PropertyCard: React.FC<{ property: Property }> = ({ property }) => (
-    <div className="flex-shrink-0 w-[90vw] max-w-[20rem] sm:w-80 bg-white rounded-lg shadow-lg overflow-hidden snap-center transform transition-transform hover:scale-105">
+const PropertyModal: React.FC<{ property: Property, onClose: () => void }> = ({ property, onClose }) => {
+    const [currentIndex, setCurrentIndex] = useState(property.mainImageIndex || 0);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    const nextImage = useCallback(() => {
+        setCurrentIndex((prev) => (prev + 1) % property.imageUrls.length);
+    }, [property.imageUrls.length]);
+
+    const prevImage = useCallback(() => {
+        setCurrentIndex((prev) => (prev - 1 + property.imageUrls.length) % property.imageUrls.length);
+    }, [property.imageUrls.length]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+        };
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.body.style.overflow = 'auto';
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onClose, nextImage, prevImage]);
+
+    const handleOutsideClick = (e: React.MouseEvent) => {
+        if (modalRef.current === e.target) {
+            onClose();
+        }
+    };
+
+    return (
+        <div ref={modalRef} onClick={handleOutsideClick} className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in" aria-modal="true" role="dialog">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
+                <div className="w-full md:w-2/3 h-1/2 md:h-full flex flex-col bg-gray-900">
+                    <div className="relative flex-grow h-0">
+                        <img src={property.imageUrls[currentIndex]} alt={`${property.title} - Foto ${currentIndex + 1}`} className="w-full h-full object-contain" />
+                        {property.imageUrls.length > 1 && (
+                            <>
+                                <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/75 transition" aria-label="Foto anterior">
+                                    <i className="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/75 transition" aria-label="Próxima foto">
+                                    <i className="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </>
+                        )}
+                    </div>
+                    {property.imageUrls.length > 1 && (
+                        <div className="flex-shrink-0 bg-gray-900 p-2">
+                             <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
+                                {property.imageUrls.map((url, index) => (
+                                    <img
+                                        key={index}
+                                        src={url}
+                                        alt={`Miniatura ${index + 1}`}
+                                        onClick={() => setCurrentIndex(index)}
+                                        className={`w-20 h-16 object-cover rounded-md cursor-pointer border-2 transition ${currentIndex === index ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="w-full md:w-1/3 h-1/2 md:h-full flex flex-col p-6 overflow-y-auto">
+                     <button onClick={onClose} className="absolute top-2 right-2 md:relative md:top-auto md:right-auto text-gray-400 hover:text-gray-800 transition self-end" aria-label="Fechar modal">
+                        <i className="fa-solid fa-xmark text-2xl"></i>
+                    </button>
+                    <h2 className="text-2xl font-bold text-gray-800 mt-2">{property.title}</h2>
+                    <p className="text-gray-500 mb-4">{`${property.neighborhood}, ${property.city}`}</p>
+                    <p className="text-3xl font-light text-green-700 mb-4">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.price)}
+                    </p>
+                    <div className="flex justify-start space-x-6 text-gray-700 border-t pt-4 mb-4">
+                        <div className="flex items-center space-x-2"> <BedIcon /> <span>{property.bedrooms} Quartos</span> </div>
+                        <div className="flex items-center space-x-2"> <BathIcon /> <span>{property.bathrooms} Banheiros</span> </div>
+                        <div className="flex items-center space-x-2"> <AreaIcon /> <span>{property.area} m²</span> </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mt-4 border-b pb-2 mb-2">Descrição</h3>
+                    <p className="text-gray-600 flex-grow text-base leading-relaxed">{property.description}</p>
+                     <a href="#contato" onClick={onClose} className="mt-6 w-full text-center bg-[#6c9a8b] hover:bg-[#5a8a7b] text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center justify-center space-x-2 transition duration-300">
+                        <span>Tenho Interesse</span>
+                        <i className="fab fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const PropertyCard: React.FC<{ property: Property, onClick: () => void }> = ({ property, onClick }) => (
+    <div onClick={onClick} className="flex-shrink-0 w-[90vw] max-w-[20rem] sm:w-80 bg-white rounded-lg shadow-lg overflow-hidden snap-center transform transition-transform hover:scale-105 cursor-pointer">
         <img src={property.imageUrls[property.mainImageIndex] || 'https://picsum.photos/800/600'} alt={property.title} className="w-full h-48 object-cover" />
         <div className="p-4 text-gray-800">
             <h3 className="text-xl font-bold mb-2 truncate">{property.title}</h3>
@@ -130,6 +222,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
   const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'fr' | 'de' | 'it' | 'ja' | 'ko' | 'zh' | 'ru'>('pt');
   const [visits, setVisits] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   
   const [filterType, setFilterType] = useState('');
   const [filterNeighborhood, setFilterNeighborhood] = useState('');
@@ -364,7 +457,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
                       <>
                         <div className="flex space-x-8 pb-4 -mx-6 px-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide" ref={scrollContainerRef} onMouseEnter={stopAutoScroll} onMouseLeave={startAutoScroll}>
                               {filteredFeaturedProperties.map(property => (
-                                  <PropertyCard key={property.id} property={property} />
+                                  <PropertyCard key={property.id} property={property} onClick={() => setSelectedProperty(property)} />
                               ))}
                         </div>
                         <button onClick={() => { handleCarouselScroll('left'); stopAutoScroll(); }} className="absolute top-1/2 left-0 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 hidden sm:flex items-center justify-center shadow-md z-10 transition" aria-label="Previous Property">
@@ -471,6 +564,7 @@ const PublicSite: React.FC<{ properties: Property[] }> = ({ properties }) => {
           <i className="fab fa-whatsapp text-4xl" aria-hidden="true"></i>
         </a>
       </div>
+      {selectedProperty && <PropertyModal property={selectedProperty} onClose={() => setSelectedProperty(null)} />}
     </>
   );
 };
