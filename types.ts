@@ -5,8 +5,16 @@ export interface User {
   picture: string;
 }
 
+// Add a type for Firestore Timestamps to avoid using 'any'
+export interface FirebaseTimestamp {
+  seconds: number;
+  nanoseconds: number;
+  toMillis: () => number;
+}
+
+
 export interface Property {
-  id: number;
+  id: string; // Changed from number to string for Firestore
   title: string;
   description: string;
   type: string; // 'Apartamento', 'Casa', etc.
@@ -18,7 +26,8 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   area: number;
-  imageUrls: string[]; // Base64 encoded strings
+  imageUrls: string[]; // URLs from Firebase Storage
   mainImageIndex: number;
   isFeatured: boolean;
+  createdAt?: FirebaseTimestamp;
 }

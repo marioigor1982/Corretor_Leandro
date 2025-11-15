@@ -80,7 +80,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, properties
         }
     };
 
-    const handleDeleteClick = async (propertyId: number) => {
+    const handleDeleteClick = async (propertyId: string) => {
         if (window.confirm('Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.')) {
             try {
                 await deleteProperty(propertyId);

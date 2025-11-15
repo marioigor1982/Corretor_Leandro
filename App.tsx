@@ -1,46 +1,31 @@
-// Fix: Add global declaration for window.google to fix TypeScript errors.
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Property, User } from './types';
 import { LoadingSpinner } from './components/icons';
 import { getProperties } from './services/propertyService';
 import { PublicSite } from './pages/PublicSite';
-import { LoginScreen } from './pages/LoginScreen';
 import { Dashboard } from './pages/Dashboard';
 
 const App: React.FC = () => {
-    const [user, setUser] = useState<User | null>(null);
+    // Mock user state, always "logged in" for dashboard access.
+    const [user, setUser] = useState<User | null>({
+        name: 'Corretor Leandro',
+        email: 'corretor@exemplo.com',
+        picture: 'https://i.postimg.cc/131QvDnS/Foto-Leandro.jpg',
+    });
     const [properties, setProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<{ type: string; message: string } | null>(null);
     const [isDashboard, setIsDashboard] = useState(window.location.hash === '#/dashboard');
-
-    useEffect(() => {
-        try {
-            const storedUser = localStorage.getItem('leandroCorretorUser');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            }
-        } catch (e) {
-            console.error("Failed to parse user from localStorage", e);
-            localStorage.removeItem('leandroCorretorUser');
-        }
-    }, []);
 
     const loadProperties = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const fetchedProperties = await getProperties();
             setProperties(fetchedProperties);
-            setError(null);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to fetch properties:", err);
-            setError('Falha ao carregar os imóveis. Tente novamente mais tarde.');
+            setError({ type: 'generic', message: 'Falha ao carregar os imóveis. Tente novamente mais tarde.' });
         } finally {
             setIsLoading(false);
         }
@@ -58,31 +43,29 @@ const App: React.FC = () => {
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
-    const handleLoginSuccess = (loggedInUser: User) => {
-        setUser(loggedInUser);
-        window.location.hash = '#/dashboard';
-    };
-
     const handleLogout = () => {
-        setUser(null);
-        localStorage.removeItem('leandroCorretorUser');
+        // In a mock environment, we can't truly log out.
+        // We'll just navigate back to the home page.
+        alert("Sessão encerrada. Retornando à página inicial.");
         window.location.hash = '#/';
     };
 
-    if (isLoading && !properties.length) {
+    if (isLoading) {
         return <LoadingSpinner />;
     }
     
     if (error) {
-        return <div className="flex items-center justify-center h-screen text-center p-8 text-red-500 bg-gray-50">{error}</div>;
+        return <div className="flex items-center justify-center h-screen text-center p-8 text-red-500 bg-gray-50">{error.message}</div>;
     }
 
     if (isDashboard) {
+        // Since there's no real login, we always show the dashboard for a mock user.
         if (user) {
-            return <Dashboard user={user} onLogout={handleLogout} properties={properties} onPropertiesUpdate={loadProperties} />;
-        } else {
-            return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+             return <Dashboard user={user} onLogout={handleLogout} properties={properties} onPropertiesUpdate={loadProperties} />;
         }
+        // This part should be unreachable, but as a fallback, redirect to home.
+        window.location.hash = '#/';
+        return <LoadingSpinner />;
     }
 
     return <PublicSite properties={properties} />;
